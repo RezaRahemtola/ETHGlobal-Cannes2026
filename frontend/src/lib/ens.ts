@@ -5,7 +5,7 @@ import { getTextRecord, getName } from "@ensdomains/ensjs/public";
 
 export const ensClient = createPublicClient({
   chain: addEnsContracts(mainnet),
-  transport: http(),
+  transport: http("https://ethereum-rpc.publicnode.com"),
 });
 
 export async function getEnsTextRecord(name: string, key: string) {
@@ -31,18 +31,7 @@ export async function getEnsNamesForAddress(address: `0x${string}`) {
 
   const addr = address.toLowerCase();
   const query = JSON.stringify({
-    query: `{
-      domains(where: {
-        or: [
-          { owner: "${addr}" },
-          { registrant: "${addr}" },
-          { wrappedOwner: "${addr}" }
-        ],
-        name_not: null
-      }, first: 50) {
-        name
-      }
-    }`,
+    query: `{ domains(where: { owner: "${addr}", name_not: null }, first: 50) { name } }`,
   });
 
   for (const url of subgraphUrls) {

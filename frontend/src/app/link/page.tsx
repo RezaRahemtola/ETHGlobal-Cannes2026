@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@/components/connect-button";
 import { StepIndicator } from "@/components/step-indicator";
@@ -12,6 +12,13 @@ export default function LinkPage() {
   const { isConnected } = useAccount();
   const { names, isLoading: loadingNames } = useEnsNames();
   const [selectedName, setSelectedName] = useState<string | null>(null);
+
+  // Auto-select first name when names load
+  useEffect(() => {
+    if (names.length > 0 && !selectedName) {
+      setSelectedName(names[0]);
+    }
+  }, [names, selectedName]);
   const { setTextRecord, isPending, isConfirming, isSuccess, hash, error } = useSetTextRecord();
 
   const label = selectedName?.replace(/\.eth$/, "");
@@ -74,7 +81,7 @@ export default function LinkPage() {
           !isConnected && "pointer-events-none opacity-40",
         )}
       >
-        <p className="mb-3 text-xs text-muted-foreground">Your ENS names</p>
+        <p className="mb-2 text-xs text-muted-foreground">Your ENS name</p>
         {loadingNames ? (
           <p className="text-sm text-muted-foreground animate-pulse">Loading names...</p>
         ) : names.length === 0 ? (
@@ -82,37 +89,25 @@ export default function LinkPage() {
             {isConnected ? "No ENS names found for this address" : "Connect your wallet first"}
           </p>
         ) : (
-          <div className="space-y-1.5">
+          <select
+            value={selectedName ?? ""}
+            onChange={(e) => setSelectedName(e.target.value || null)}
+            className="h-11 w-full appearance-none rounded-lg bg-transparent px-4 text-sm text-foreground outline-none cursor-pointer"
+            style={{
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.05)",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 12px center",
+            }}
+          >
+            {names.length === 0 && <option value="">Select a name...</option>}
             {names.map((name) => (
-              <button
-                key={name}
-                onClick={() => setSelectedName(name)}
-                className={cn(
-                  "w-full rounded-lg border p-3 text-left text-sm transition-all duration-200",
-                  selectedName === name
-                    ? "scale-[1.01] text-foreground"
-                    : "hover:scale-[1.005]",
-                )}
-                style={
-                  selectedName === name
-                    ? {
-                        borderColor: "rgba(110,231,183,0.25)",
-                        background: "rgba(110,231,183,0.06)",
-                        boxShadow: "0 0 16px rgba(110,231,183,0.08), inset 0 1px 0 rgba(110,231,183,0.06)",
-                      }
-                    : {
-                        borderColor: "rgba(255,255,255,0.06)",
-                        background: "transparent",
-                      }
-                }
-              >
-                {selectedName === name && (
-                  <span style={{ color: "#6EE7B7" }} className="mr-2">&#x25CF;</span>
-                )}
+              <option key={name} value={name}>
                 {name}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         )}
       </div>
 
@@ -138,7 +133,7 @@ export default function LinkPage() {
 
       {/* CTA */}
       <button
-        className="w-full rounded-full bg-white text-[#0a0a0a] py-3 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
+        className="w-full rounded-full bg-white text-[#0a0a0a] h-12 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
         style={{ backgroundColor: "#fafafa", color: "#0a0a0a" }}
         disabled={!selectedName || isPending || isConfirming}
         onClick={() => selectedName && setTextRecord(selectedName)}

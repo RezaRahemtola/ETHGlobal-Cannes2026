@@ -21,7 +21,7 @@ export const config = createConfig({
   chains: [mainnet, worldchain],
   connectors: [injected()],
   transports: {
-    [mainnet.id]: http(),
+    [mainnet.id]: http("https://ethereum-rpc.publicnode.com"),
     [worldchain.id]: http(),
   },
 });

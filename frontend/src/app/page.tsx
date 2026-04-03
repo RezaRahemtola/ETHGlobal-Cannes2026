@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Verifier } from "@/components/verifier";
-import { IrisLogo } from "@/components/iris-logo";
 
 export default function Home() {
   return (
