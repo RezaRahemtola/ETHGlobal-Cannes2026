@@ -34,7 +34,10 @@ export function Nav() {
       }}
     >
       <nav className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-        <Link href={logoHref} className="flex items-center gap-2 transition-opacity hover:opacity-80">
+        <Link
+          href={logoHref}
+          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+        >
           <IrisLogo size={22} />
           <span className="text-[17px] font-semibold tracking-tight">HumanENS</span>
         </Link>
