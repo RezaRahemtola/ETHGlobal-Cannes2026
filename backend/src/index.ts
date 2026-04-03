@@ -221,7 +221,14 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
     const hash = keccak256(
       encodePacked(
         ["string", "address", "bytes32", "string", "string", "uint256"],
-        ["revokeAgent", registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp],
+        [
+          "revokeAgent",
+          registrant as Hex,
+          nullifierHash as Hex,
+          parentLabel,
+          agentLabel,
+          timestamp,
+        ],
       ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });

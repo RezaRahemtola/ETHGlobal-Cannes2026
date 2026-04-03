@@ -141,12 +141,17 @@ app.use((_req, res, next) => {
 // EIP-3668 GET: /{sender}/{data}.json
 app.get("/:sender/:data.json", async (req, res) => {
   try {
-    const responseData = await handleRequest(req.params.data as Hex);
+    const data = req.params.data;
+    if (!data || !/^0x[0-9a-fA-F]+$/.test(data)) {
+      res.status(400).json({ error: "Invalid calldata" });
+      return;
+    }
+    const responseData = await handleRequest(data as Hex);
     res.json({ data: responseData });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Gateway error:", message);
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: "Internal gateway error" });
   }
 });
 
@@ -158,7 +163,7 @@ app.post("/", async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Gateway error:", message);
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: "Internal gateway error" });
   }
 });
 

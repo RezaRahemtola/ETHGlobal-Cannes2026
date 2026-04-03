@@ -29,6 +29,7 @@ contract HumanENSLinker {
     mapping(bytes32 => address) public nullifierToRegistrant;
     mapping(bytes32 => bytes32) public sourceNodeToNullifier;
     mapping(bytes32 => bytes32) public agentToParentNullifier;
+    mapping(bytes32 => bytes32[]) internal nullifierAgentNodes;
     mapping(bytes32 => bytes32) public labelHashToSourceNode;
 
     uint256 constant MAX_AGE = 10 minutes;
@@ -283,6 +284,8 @@ contract HumanENSLinker {
             bytes32 sourceNode
         ) = abi.decode(extraData, (address, string, bytes32, bytes32));
 
+        require(sourceNode != bytes32(0), "No link");
+
         // Re-derive node from label — don't trust extraData
         require(
             labelHashToSourceNode[keccak256(bytes(label))] == sourceNode,
@@ -394,6 +397,7 @@ contract HumanENSLinker {
         }
 
         agentToParentNullifier[agentNode] = nullifierHash;
+        nullifierAgentNodes[nullifierHash].push(agentNode);
 
         registry.createSubnode(
             parentNode,
@@ -497,6 +501,16 @@ contract HumanENSLinker {
         bytes32 sourceNode,
         string memory label
     ) internal {
+        // Burn all agent subnames under this nullifier
+        bytes32[] storage agents = nullifierAgentNodes[nullifier];
+        for (uint256 i = 0; i < agents.length; i++) {
+            if (agentToParentNullifier[agents[i]] != bytes32(0)) {
+                delete agentToParentNullifier[agents[i]];
+                registry.burn(uint256(agents[i]));
+            }
+        }
+        delete nullifierAgentNodes[nullifier];
+
         delete nullifierToSourceNode[nullifier];
         delete nullifierToRegistrant[nullifier];
         delete sourceNodeToNullifier[sourceNode];
