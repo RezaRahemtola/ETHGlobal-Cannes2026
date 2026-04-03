@@ -28,7 +28,6 @@ contract HumanENSLinker {
     mapping(bytes32 => bytes32) public nullifierToSourceNode;
     mapping(bytes32 => address) public nullifierToRegistrant;
     mapping(bytes32 => bytes32) public sourceNodeToNullifier;
-    mapping(bytes32 => bool) public subnameExists;
     mapping(bytes32 => bytes32) public agentToParentNullifier;
     mapping(bytes32 => bytes32) public labelHashToSourceNode;
 
@@ -204,7 +203,6 @@ contract HumanENSLinker {
     ) internal {
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
-        subnameExists[node] = true;
         registry.createSubnode(baseNode, label, address(this), new bytes[](0));
         registry.setAddr(node, registrant);
         registry.setText(node, "world-id-verified", "true");
@@ -226,6 +224,7 @@ contract HumanENSLinker {
             labelHashToSourceNode[keccak256(bytes(label))] == sourceNode,
             "Label mismatch"
         );
+        require(msg.sender == nullifierToRegistrant[nullifierHash], "Not registrant");
 
         require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
         bytes32 h = keccak256(
@@ -242,7 +241,7 @@ contract HumanENSLinker {
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
         registry.burn(uint256(node));
-        _clearLink(nullifierHash, sourceNode, node, label);
+        _clearLink(nullifierHash, sourceNode, label);
 
         emit LinkRevoked(label, sourceNode);
     }
@@ -254,12 +253,11 @@ contract HumanENSLinker {
         string calldata label,
         string calldata sourceName
     ) external view {
+        bytes32 sourceNode = labelHashToSourceNode[keccak256(bytes(label))];
+        require(sourceNode != bytes32(0), "No link");
+
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
-        require(subnameExists[node], "No link");
-
-        bytes32 sourceNode = labelHashToSourceNode[keccak256(bytes(label))];
-        require(sourceNode != bytes32(0), "No source");
 
         revert OffchainLookup(
             address(this),
@@ -324,7 +322,7 @@ contract HumanENSLinker {
         // Stale — burn and clear
         bytes32 nullifier = sourceNodeToNullifier[sourceNode];
         registry.burn(uint256(node));
-        _clearLink(nullifier, sourceNode, node, label);
+        _clearLink(nullifier, sourceNode, label);
 
         emit LinkChallenged(label, sourceNode, challenger);
     }
@@ -365,14 +363,16 @@ contract HumanENSLinker {
             );
         }
 
+        require(
+            labelHashToSourceNode[keccak256(bytes(parentLabel))] != bytes32(0),
+            "Parent not found"
+        );
+
         bytes32 baseNode = registry.baseNode();
         bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
-        require(subnameExists[parentNode], "Parent not found");
-
         bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
-        require(!subnameExists[agentNode], "Agent exists");
+        require(agentToParentNullifier[agentNode] == bytes32(0), "Agent exists");
 
-        subnameExists[agentNode] = true;
         agentToParentNullifier[agentNode] = nullifierHash;
 
         registry.createSubnode(
@@ -420,7 +420,6 @@ contract HumanENSLinker {
         );
 
         registry.burn(uint256(agentNode));
-        subnameExists[agentNode] = false;
         delete agentToParentNullifier[agentNode];
 
         emit AgentRevoked(parentLabel, agentLabel);
@@ -473,13 +472,11 @@ contract HumanENSLinker {
     function _clearLink(
         bytes32 nullifier,
         bytes32 sourceNode,
-        bytes32 node,
         string memory label
     ) internal {
         delete nullifierToSourceNode[nullifier];
         delete nullifierToRegistrant[nullifier];
         delete sourceNodeToNullifier[sourceNode];
         delete labelHashToSourceNode[keccak256(bytes(label))];
-        subnameExists[node] = false;
     }
 }
