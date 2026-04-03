@@ -5,15 +5,24 @@ import { usePathname } from "next/navigation";
 import { IrisLogo } from "@/components/iris-logo";
 import { cn } from "@/lib/utils";
 
-const links = [
+const browserLinks = [
   { href: "/", label: "Home" },
   { href: "/link", label: "Link" },
   { href: "/app", label: "Register" },
   { href: "/app/manage", label: "Agents" },
 ];
 
+const appLinks = [
+  { href: "/app", label: "Home" },
+  { href: "/app/register", label: "Register" },
+  { href: "/app/manage", label: "Agents" },
+];
+
 export function Nav() {
   const pathname = usePathname();
+  const inApp = pathname.startsWith("/app");
+  const links = inApp ? appLinks : browserLinks;
+  const logoHref = inApp ? "/app" : "/";
 
   return (
     <header
@@ -24,16 +33,16 @@ export function Nav() {
       }}
     >
       <nav className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+        <Link href={logoHref} className="flex items-center gap-2 transition-opacity hover:opacity-80">
           <IrisLogo size={22} />
           <span className="text-[17px] font-semibold tracking-tight">HumanENS</span>
         </Link>
         <div className="flex gap-6 text-[13px]">
           {links.map(({ href, label }) => {
             const isActive =
-              href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(href) && (href !== "/app" || pathname === "/app");
+              href === "/" || href === "/app"
+                ? pathname === href
+                : pathname.startsWith(href);
             return (
               <Link
                 key={href}

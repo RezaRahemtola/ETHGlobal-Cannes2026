@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { ConnectButton } from "@/components/connect-button";
 import { StepIndicator } from "@/components/step-indicator";
 import { useEnsNames } from "@/hooks/use-ens-names";
@@ -9,7 +11,14 @@ import { useSetTextRecord } from "@/hooks/use-set-text-record";
 import { cn } from "@/lib/utils";
 
 export default function LinkPage() {
+  const router = useRouter();
   const { isConnected } = useAccount();
+
+  useEffect(() => {
+    if (MiniKit.isInstalled()) {
+      router.replace("/app");
+    }
+  }, [router]);
   const { names, isLoading: loadingNames } = useEnsNames();
   const [selectedName, setSelectedName] = useState<string | null>(null);
 
