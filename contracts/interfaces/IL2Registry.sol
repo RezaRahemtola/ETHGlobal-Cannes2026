@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.34;
 
 /// @notice Minimal interface for Durin L2 Registry (deployed via L2RegistryFactory on World Chain)
 /// @dev Full source: https://github.com/resolverworks/durin
@@ -21,7 +21,10 @@ interface IL2Registry {
     ) external returns (bytes32);
 
     /// @notice Compute the namehash of a label under a parent node
-    function makeNode(bytes32 parentNode, string calldata label) external pure returns (bytes32);
+    function makeNode(
+        bytes32 parentNode,
+        string calldata label
+    ) external pure returns (bytes32);
 
     /// @notice Get the owner of a node (ERC-721 ownerOf by namehash)
     function owner(bytes32 node) external view returns (address);
@@ -36,7 +39,11 @@ interface IL2Registry {
     function setAddr(bytes32 node, uint256 coinType, bytes calldata a) external;
 
     /// @notice Set a text record
-    function setText(bytes32 node, string calldata key, string calldata value) external;
+    function setText(
+        bytes32 node,
+        string calldata key,
+        string calldata value
+    ) external;
 
     /// @notice Set the contenthash
     function setContenthash(bytes32 node, bytes calldata hash) external;

@@ -23,7 +23,7 @@ contract HumanENSLinker {
     address public owner;
     address public backendSigner;
     address public gatewaySigner;
-    string[] public gatewayUrls;
+    string public gatewayUrl;
 
     mapping(bytes32 => bytes32) public nullifierToSourceNode;
     mapping(bytes32 => address) public nullifierToRegistrant;
@@ -57,13 +57,19 @@ contract HumanENSLinker {
         address _registry,
         address _backendSigner,
         address _gatewaySigner,
-        string[] memory _gatewayUrls
+        string memory _gatewayUrl
     ) {
         registry = IL2Registry(_registry);
         owner = msg.sender;
         backendSigner = _backendSigner;
         gatewaySigner = _gatewaySigner;
-        gatewayUrls = _gatewayUrls;
+        gatewayUrl = _gatewayUrl;
+    }
+
+    function _urls() internal view returns (string[] memory) {
+        string[] memory urls = new string[](1);
+        urls[0] = gatewayUrl;
+        return urls;
     }
 
     // ─── Register Link (CCIP-Read) ──────────────────────────────────────
@@ -81,7 +87,7 @@ contract HumanENSLinker {
     ) external {
         revert OffchainLookup(
             address(this),
-            gatewayUrls,
+            _urls(),
             abi.encode(sourceNode, "humanens", sourceName),
             this.registerLinkCallback.selector,
             abi.encode(
@@ -107,49 +113,70 @@ contract HumanENSLinker {
             bytes memory attestationData
         ) = abi.decode(extraData, (address, string, bytes32, string, bytes));
 
+        bytes32 nullifierHash;
+
         // Verify backend attestation (World ID)
-        (bytes32 nullifierHash, uint256 attTimestamp, bytes memory attSig) = abi
-            .decode(attestationData, (bytes32, uint256, bytes));
-        require(
-            block.timestamp <= attTimestamp + MAX_AGE,
-            "Attestation expired"
-        );
-        bytes32 attHash = keccak256(
-            abi.encodePacked(
-                registrant,
-                nullifierHash,
-                sourceNode,
-                label,
-                attTimestamp
-            )
-        );
-        require(_recover(attHash, attSig) == backendSigner, "Bad backend sig");
+        {
+            (bytes32 _nul, uint256 attTimestamp, bytes memory attSig) = abi
+                .decode(attestationData, (bytes32, uint256, bytes));
+            nullifierHash = _nul;
+            require(
+                block.timestamp <= attTimestamp + MAX_AGE,
+                "Attestation expired"
+            );
+            bytes32 attHash = keccak256(
+                abi.encodePacked(
+                    registrant,
+                    nullifierHash,
+                    sourceNode,
+                    label,
+                    attTimestamp
+                )
+            );
+            require(
+                _recover(attHash, attSig) == backendSigner,
+                "Bad backend sig"
+            );
+        }
 
         // Verify gateway response (L1 ownership)
-        (
-            bytes32 proofSourceNode,
-            string memory value,
-            address ensOwner,
-            uint256 proofTimestamp,
-            bytes memory gatewaySig
-        ) = abi.decode(response, (bytes32, string, address, uint256, bytes));
-        require(block.timestamp <= proofTimestamp + MAX_AGE, "Proof expired");
-        require(proofSourceNode == sourceNode, "SourceNode mismatch");
-        string memory expected = string(
-            abi.encodePacked(label, ".humanens.eth")
-        );
-        require(
-            keccak256(bytes(value)) == keccak256(bytes(expected)),
-            "Text record mismatch"
-        );
-        require(ensOwner == registrant, "Not ENS owner");
-        bytes32 proofHash = keccak256(
-            abi.encodePacked(proofSourceNode, value, ensOwner, proofTimestamp)
-        );
-        require(
-            _recover(proofHash, gatewaySig) == gatewaySigner,
-            "Bad gateway sig"
-        );
+        {
+            (
+                bytes32 proofSourceNode,
+                string memory value,
+                address ensOwner,
+                uint256 proofTimestamp,
+                bytes memory gatewaySig
+            ) = abi.decode(
+                    response,
+                    (bytes32, string, address, uint256, bytes)
+                );
+            require(
+                block.timestamp <= proofTimestamp + MAX_AGE,
+                "Proof expired"
+            );
+            require(proofSourceNode == sourceNode, "SourceNode mismatch");
+            require(
+                keccak256(bytes(value)) ==
+                    keccak256(
+                        bytes(string(abi.encodePacked(label, ".humanens.eth")))
+                    ),
+                "Text record mismatch"
+            );
+            require(ensOwner == registrant, "Not ENS owner");
+            bytes32 proofHash = keccak256(
+                abi.encodePacked(
+                    proofSourceNode,
+                    value,
+                    ensOwner,
+                    proofTimestamp
+                )
+            );
+            require(
+                _recover(proofHash, gatewaySig) == gatewaySigner,
+                "Bad gateway sig"
+            );
+        }
 
         // Uniqueness checks
         require(sourceNodeToNullifier[sourceNode] == bytes32(0), "Link exists");
@@ -165,6 +192,16 @@ contract HumanENSLinker {
         labelHashToSourceNode[keccak256(bytes(label))] = sourceNode;
 
         // Mint subname
+        _mintSubname(label, sourceName, registrant);
+
+        emit LinkRegistered(label, sourceNode, nullifierHash, registrant);
+    }
+
+    function _mintSubname(
+        string memory label,
+        string memory sourceName,
+        address registrant
+    ) internal {
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
         subnameExists[node] = true;
@@ -173,8 +210,6 @@ contract HumanENSLinker {
         registry.setText(node, "world-id-verified", "true");
         registry.setText(node, "world-id-level", "orb");
         registry.setText(node, "source-name", sourceName);
-
-        emit LinkRegistered(label, sourceNode, nullifierHash, registrant);
     }
 
     // ─── Revoke Link ─────────────────────────────────────────────────────
@@ -228,7 +263,7 @@ contract HumanENSLinker {
 
         revert OffchainLookup(
             address(this),
-            gatewayUrls,
+            _urls(),
             abi.encode(sourceNode, "humanens", sourceName),
             this.challengeLinkCallback.selector,
             abi.encode(msg.sender, label, node, sourceNode)
@@ -247,32 +282,44 @@ contract HumanENSLinker {
             bytes32 sourceNode
         ) = abi.decode(extraData, (address, string, bytes32, bytes32));
 
-        // Verify gateway response
-        (
-            bytes32 proofSourceNode,
-            string memory value,
-            address ensOwner,
-            uint256 proofTimestamp,
-            bytes memory gatewaySig
-        ) = abi.decode(response, (bytes32, string, address, uint256, bytes));
-        require(block.timestamp <= proofTimestamp + MAX_AGE, "Proof expired");
-        require(proofSourceNode == sourceNode, "SourceNode mismatch");
-        bytes32 proofHash = keccak256(
-            abi.encodePacked(proofSourceNode, value, ensOwner, proofTimestamp)
-        );
-        require(
-            _recover(proofHash, gatewaySig) == gatewaySigner,
-            "Bad gateway sig"
-        );
+        // Verify gateway response + check validity in scoped block
+        {
+            (
+                bytes32 proofSourceNode,
+                string memory value,
+                address ensOwner,
+                uint256 proofTimestamp,
+                bytes memory gatewaySig
+            ) = abi.decode(
+                    response,
+                    (bytes32, string, address, uint256, bytes)
+                );
+            require(
+                block.timestamp <= proofTimestamp + MAX_AGE,
+                "Proof expired"
+            );
+            require(proofSourceNode == sourceNode, "SourceNode mismatch");
+            bytes32 proofHash = keccak256(
+                abi.encodePacked(
+                    proofSourceNode,
+                    value,
+                    ensOwner,
+                    proofTimestamp
+                )
+            );
+            require(
+                _recover(proofHash, gatewaySig) == gatewaySigner,
+                "Bad gateway sig"
+            );
 
-        // Check if link is still valid
-        string memory expected = string(
-            abi.encodePacked(label, ".humanens.eth")
-        );
-        bool textValid = keccak256(bytes(value)) == keccak256(bytes(expected));
-        bool ownerValid = ensOwner ==
-            nullifierToRegistrant[sourceNodeToNullifier[sourceNode]];
-        require(!textValid || !ownerValid, "Link still valid");
+            bool textValid = keccak256(bytes(value)) ==
+                keccak256(
+                    bytes(string(abi.encodePacked(label, ".humanens.eth")))
+                );
+            bool ownerValid = ensOwner ==
+                nullifierToRegistrant[sourceNodeToNullifier[sourceNode]];
+            require(!textValid || !ownerValid, "Link still valid");
+        }
 
         // Stale — burn and clear
         bytes32 nullifier = sourceNodeToNullifier[sourceNode];
@@ -292,26 +339,31 @@ contract HumanENSLinker {
         uint256 timestamp,
         bytes calldata sig
     ) external {
-        require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
-        bytes32 h = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                nullifierHash,
-                parentLabel,
-                agentLabel,
-                agentAddress,
-                timestamp
-            )
-        );
-        require(_recover(h, sig) == backendSigner, "Bad backend sig");
-        require(
-            nullifierToSourceNode[nullifierHash] != bytes32(0),
-            "No parent link"
-        );
-        require(
-            msg.sender == nullifierToRegistrant[nullifierHash],
-            "Not registrant"
-        );
+        {
+            require(
+                block.timestamp <= timestamp + MAX_AGE,
+                "Attestation expired"
+            );
+            bytes32 h = keccak256(
+                abi.encodePacked(
+                    msg.sender,
+                    nullifierHash,
+                    parentLabel,
+                    agentLabel,
+                    agentAddress,
+                    timestamp
+                )
+            );
+            require(_recover(h, sig) == backendSigner, "Bad backend sig");
+            require(
+                nullifierToSourceNode[nullifierHash] != bytes32(0),
+                "No parent link"
+            );
+            require(
+                msg.sender == nullifierToRegistrant[nullifierHash],
+                "Not registrant"
+            );
+        }
 
         bytes32 baseNode = registry.baseNode();
         bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
@@ -384,9 +436,9 @@ contract HumanENSLinker {
         require(msg.sender == owner);
         gatewaySigner = _s;
     }
-    function setGatewayUrls(string[] calldata _urls) external {
+    function setGatewayUrl(string calldata _url) external {
         require(msg.sender == owner);
-        gatewayUrls = _urls;
+        gatewayUrl = _url;
     }
     function transferOwnership(address _o) external {
         require(msg.sender == owner);
