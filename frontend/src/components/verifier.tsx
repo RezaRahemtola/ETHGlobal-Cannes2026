@@ -19,7 +19,7 @@ export function Verifier() {
           placeholder="alice.eth"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="h-11 flex-1 rounded-lg px-4 text-sm outline-none transition-all"
+          className="h-11 flex-1 rounded-lg px-4 text-sm outline-none transition-all placeholder:text-muted-foreground/50"
           style={{
             border: "1px solid rgba(255,255,255,0.08)",
             background: "rgba(255,255,255,0.05)",

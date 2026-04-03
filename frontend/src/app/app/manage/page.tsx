@@ -294,7 +294,7 @@ function ManageFlow() {
             placeholder="alice"
             value={parentLabel}
             onChange={(e) => setParentLabel(e.target.value.toLowerCase())}
-            className="flex-1 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all"
+            className="flex-1 h-10 rounded-lg px-4 text-sm text-white outline-none transition-all"
             style={{
               border: "1px solid rgba(255,255,255,0.08)",
               background: "rgba(255,255,255,0.05)",
@@ -379,7 +379,7 @@ function ManageFlow() {
                     value={agentLabel}
                     onChange={(e) => setAgentLabel(e.target.value.toLowerCase())}
                     disabled={isCreating}
-                    className="flex-1 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all disabled:opacity-50"
+                    className="flex-1 h-10 rounded-lg px-4 text-sm text-white outline-none transition-all disabled:opacity-50"
                     style={{
                       border: "1px solid rgba(255,255,255,0.08)",
                       background: "rgba(255,255,255,0.05)",
