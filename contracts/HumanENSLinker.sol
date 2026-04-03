@@ -60,15 +60,20 @@ contract HumanENSLinker {
     // ─── Register Link (CCIP-Read) ──────────────────────────────────────
 
     /// @notice Reverts with OffchainLookup — gateway checks L1 ENS text record + owner.
+    /// @param label The desired subname label (e.g., "alice")
+    /// @param sourceName The full ENS name (e.g., "alice.eth") — needed by gateway to read L1
+    /// @param sourceNode namehash of sourceName
+    /// @param attestationData abi.encode(nullifierHash, timestamp, backendSig)
     function registerLink(
         string calldata label,
+        string calldata sourceName,
         bytes32 sourceNode,
-        bytes calldata attestationData // abi.encode(nullifierHash, timestamp, backendSig)
+        bytes calldata attestationData
     ) external {
         revert OffchainLookup(
             address(this),
             gatewayUrls,
-            abi.encode(sourceNode, "humanens"),
+            abi.encode(sourceNode, "humanens", sourceName),
             this.registerLinkCallback.selector,
             abi.encode(msg.sender, label, sourceNode, attestationData)
         );
@@ -148,7 +153,7 @@ contract HumanENSLinker {
     // ─── Challenge Stale Link (CCIP-Read) ────────────────────────────────
 
     /// @notice Anyone can challenge a link. Gateway re-checks L1 text record + owner.
-    function challengeLink(string calldata label) external {
+    function challengeLink(string calldata label, string calldata sourceName) external {
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
         require(subnameExists[node], "No link");
@@ -159,7 +164,7 @@ contract HumanENSLinker {
         revert OffchainLookup(
             address(this),
             gatewayUrls,
-            abi.encode(sourceNode, "humanens"),
+            abi.encode(sourceNode, "humanens", sourceName),
             this.challengeLinkCallback.selector,
             abi.encode(msg.sender, label, node, sourceNode)
         );
