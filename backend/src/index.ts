@@ -126,43 +126,6 @@ app.post("/api/verify-and-attest", async (req, res) => {
   }
 });
 
-/**
- * POST /api/sign-attestation
- *
- * For actions that don't need fresh World ID verification (revoke, agent ops).
- * The nullifier is already known — just sign a fresh attestation.
- *
- * Body: { registrant, nullifierHash, sourceNode, label }
- * (In production, you'd re-verify World ID here too. For hackathon, trust the nullifier.)
- */
-app.post("/api/sign-attestation", async (req, res) => {
-  try {
-    const { registrant, nullifierHash, sourceNode, label } = req.body;
-
-    if (!registrant || !nullifierHash) {
-      return res.status(400).json({ error: "Missing fields" });
-    }
-
-    const timestamp = BigInt(Math.floor(Date.now() / 1000));
-    const signature = await signAttestation(
-      registrant as Hex,
-      nullifierHash as Hex,
-      (sourceNode || "0x" + "00".repeat(32)) as Hex,
-      label || "",
-      timestamp
-    );
-
-    res.json({
-      nullifierHash,
-      timestamp: timestamp.toString(),
-      signature,
-    });
-  } catch (err: any) {
-    console.error("Signing error:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", signer: account.address, action: WORLD_ID_ACTION });
 });
