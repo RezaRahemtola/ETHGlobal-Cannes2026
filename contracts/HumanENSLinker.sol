@@ -371,7 +371,11 @@ contract HumanENSLinker {
         bytes32 baseNode = registry.baseNode();
         bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
         bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
-        require(agentToParentNullifier[agentNode] == bytes32(0), "Agent exists");
+        bytes32 existingNullifier = agentToParentNullifier[agentNode];
+        require(
+            existingNullifier == bytes32(0) || nullifierToSourceNode[existingNullifier] == bytes32(0),
+            "Agent exists"
+        );
 
         agentToParentNullifier[agentNode] = nullifierHash;
 
@@ -454,7 +458,9 @@ contract HumanENSLinker {
             abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
         );
         (bytes32 r, bytes32 s, uint8 v) = _splitSig(sig);
-        return ecrecover(ethHash, v, r, s);
+        address signer = ecrecover(ethHash, v, r, s);
+        require(signer != address(0), "Invalid sig");
+        return signer;
     }
 
     function _splitSig(
