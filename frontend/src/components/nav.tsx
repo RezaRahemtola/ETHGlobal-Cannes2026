@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { IrisLogo } from "@/components/iris-logo";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +13,7 @@ const browserLinks = [
   { href: "/app/manage", label: "Agents" },
 ];
 
-const appLinks = [
+const miniAppLinks = [
   { href: "/app", label: "Home" },
   { href: "/app/register", label: "Register" },
   { href: "/app/manage", label: "Agents" },
@@ -20,9 +21,9 @@ const appLinks = [
 
 export function Nav() {
   const pathname = usePathname();
-  const inApp = pathname.startsWith("/app");
-  const links = inApp ? appLinks : browserLinks;
-  const logoHref = inApp ? "/app" : "/";
+  const { isInstalled } = useMiniKit();
+  const links = isInstalled ? miniAppLinks : browserLinks;
+  const logoHref = isInstalled ? "/app" : "/";
 
   return (
     <header
@@ -39,10 +40,7 @@ export function Nav() {
         </Link>
         <div className="flex gap-6 text-[13px]">
           {links.map(({ href, label }) => {
-            const isActive =
-              href === "/" || href === "/app"
-                ? pathname === href
-                : pathname.startsWith(href);
+            const isActive = pathname === href;
             return (
               <Link
                 key={href}
