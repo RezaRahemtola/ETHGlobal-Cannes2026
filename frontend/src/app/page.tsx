@@ -16,17 +16,6 @@ export default function Home() {
 
       {/* Hero */}
       <section className="relative flex flex-col items-center justify-center gap-6 px-4 pt-16 pb-12 text-center">
-        <div
-          className="animate-fade-in inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs"
-          style={{
-            border: "1px solid rgba(110,231,183,0.12)",
-            background: "rgba(110,231,183,0.06)",
-            color: "rgba(110,231,183,0.8)",
-          }}
-        >
-          <IrisLogo size={12} />
-          Biometric Identity Protocol
-        </div>
         <h1 className="animate-fade-in-up max-w-lg text-4xl font-bold tracking-[-2px] sm:text-5xl leading-[1.08]">
           Seen by the Orb,
           <br />
@@ -55,8 +44,8 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="mx-auto max-w-2xl px-4 pt-16 pb-12">
-        <h2 className="animate-fade-in mb-8 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+      <section id="how-it-works" className="mx-auto max-w-2xl px-4 pt-8 pb-8">
+        <h2 className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           How it works
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -114,8 +103,8 @@ export default function Home() {
       </section>
 
       {/* Verifier */}
-      <section className="mx-auto max-w-md px-4 pt-16 pb-20">
-        <h2 className="animate-fade-in mb-6 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+      <section className="mx-auto max-w-md px-4 pt-8 pb-16">
+        <h2 className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           Verify a name
         </h2>
         <div
