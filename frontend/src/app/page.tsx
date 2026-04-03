@@ -118,10 +118,14 @@ export default function Home() {
         <h2 className="animate-fade-in mb-6 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           Verify a name
         </h2>
-        <div className="gradient-border animate-fade-in-up delay-200">
-          <div className="rounded-xl p-4">
-            <Verifier />
-          </div>
+        <div
+          className="animate-fade-in-up delay-200 rounded-xl p-5"
+          style={{
+            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <Verifier />
         </div>
       </section>
     </main>

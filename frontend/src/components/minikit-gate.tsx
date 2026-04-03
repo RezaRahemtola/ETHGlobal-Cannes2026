@@ -60,7 +60,7 @@ function MiniKitGateScreen() {
         </a>
       )}
 
-      <p className="animate-fade-in delay-400 mt-6 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+      <p className="animate-fade-in delay-400 text-xs" style={{ color: "rgba(255,255,255,0.3)", marginTop: "48px" }}>
         or search{" "}
         <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>&quot;HumanENS&quot;</span>{" "}
         in World App
