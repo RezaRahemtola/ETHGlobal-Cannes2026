@@ -1,6 +1,7 @@
 import express from "express";
 import { type Hex, keccak256, encodePacked, encodeAbiParameters, parseAbiParameters } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { signRequest } from "@worldcoin/idkit-core/signing";
 
 // ─── Config ──────────────────────────────────────────────────────────
 
@@ -8,8 +9,11 @@ const BACKEND_SIGNER_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY as Hex;
 if (!BACKEND_SIGNER_KEY) throw new Error("BACKEND_SIGNER_PRIVATE_KEY required");
 
 const WORLD_ID_RP_ID = process.env.WORLD_ID_RP_ID || "rp_xxxxx";
-const WORLD_ID_ACTION = process.env.WORLD_ID_ACTION || "verify-human";
+const WORLD_ID_ACTION = process.env.WORLD_ID_ACTION || "humanens";
 const PORT = Number(process.env.PORT) || 3002;
+
+const RP_SIGNING_KEY = process.env.RP_SIGNING_KEY as string;
+if (!RP_SIGNING_KEY) throw new Error("RP_SIGNING_KEY required");
 
 const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 
@@ -70,6 +74,44 @@ app.use((_req, res, next) => {
     return;
   }
   next();
+});
+
+app.post("/api/rp-signature", async (req, res) => {
+  try {
+    const { sig, nonce, createdAt, expiresAt } = signRequest({
+      signingKeyHex: RP_SIGNING_KEY,
+      action: WORLD_ID_ACTION,
+    });
+
+    res.json({
+      sig,
+      nonce,
+      created_at: createdAt,
+      expires_at: expiresAt,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("RP signature error:", message);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/verify-nullifier", async (req, res) => {
+  try {
+    const { idkitResult } = req.body;
+    if (!idkitResult) {
+      return res.status(400).json({ error: "Missing idkitResult" });
+    }
+
+    const { nullifierHash } = await verifyWorldId(idkitResult);
+    console.log(`Verified nullifier for text record: ${nullifierHash.slice(0, 10)}...`);
+
+    res.json({ nullifierHash });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Verify nullifier error:", message);
+    res.status(400).json({ error: message });
+  }
 });
 
 /**

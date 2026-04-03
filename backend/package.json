@@ -12,6 +12,7 @@
     "format:fix": "prettier --write src/"
   },
   "dependencies": {
+    "@worldcoin/idkit-core": "^4.1.0",
     "express": "^4.21.0",
     "viem": "^2.21.0"
   },
