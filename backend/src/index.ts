@@ -18,7 +18,7 @@ const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: string }> {
   // Verify action matches our expected action
   const result = idkitResult as Record<string, unknown>;
-  if (result.action && result.action !== WORLD_ID_ACTION) {
+  if (result.action !== WORLD_ID_ACTION) {
     throw new Error(`Action mismatch: expected "${WORLD_ID_ACTION}", got "${result.action}"`);
   }
 

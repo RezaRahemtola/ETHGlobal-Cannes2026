@@ -375,8 +375,8 @@ contract HumanENSLinker {
         }
 
         require(
-            labelHashToSourceNode[keccak256(bytes(parentLabel))] != bytes32(0),
-            "Parent not found"
+            labelHashToSourceNode[keccak256(bytes(parentLabel))] == nullifierToSourceNode[nullifierHash],
+            "Parent label mismatch"
         );
 
         bytes32 baseNode = registry.baseNode();
@@ -440,8 +440,8 @@ contract HumanENSLinker {
             "Not registrant"
         );
 
-        registry.burn(uint256(agentNode));
         delete agentToParentNullifier[agentNode];
+        registry.burn(uint256(agentNode));
 
         emit AgentRevoked(parentLabel, agentLabel);
     }
