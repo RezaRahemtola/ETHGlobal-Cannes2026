@@ -139,9 +139,10 @@ app.get("/:sender/:data.json", async (req, res) => {
   try {
     const responseData = await handleRequest(req.params.data as Hex);
     res.json({ data: responseData });
-  } catch (err: any) {
-    console.error("Gateway error:", err.message);
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Gateway error:", message);
+    res.status(500).json({ error: message });
   }
 });
 
@@ -150,9 +151,10 @@ app.post("/", async (req, res) => {
   try {
     const responseData = await handleRequest(req.body.data as Hex);
     res.json({ data: responseData });
-  } catch (err: any) {
-    console.error("Gateway error:", err.message);
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Gateway error:", message);
+    res.status(500).json({ error: message });
   }
 });
 

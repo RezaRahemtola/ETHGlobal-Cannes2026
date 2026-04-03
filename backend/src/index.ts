@@ -15,7 +15,7 @@ const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 
 // ─── World ID cloud verification ────────────────────────────────────
 
-async function verifyWorldId(idkitResult: any): Promise<{ nullifierHash: string }> {
+async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: string }> {
   const res = await fetch(`https://developer.world.org/api/v4/verify/${WORLD_ID_RP_ID}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -117,9 +117,10 @@ app.post("/api/verify-and-attest", async (req, res) => {
       signature,
       attestationData,
     });
-  } catch (err: any) {
-    console.error("Verification error:", err.message);
-    res.status(400).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Verification error:", message);
+    res.status(400).json({ error: message });
   }
 });
 
@@ -148,9 +149,10 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
     );
 
     res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
-  } catch (err: any) {
-    console.error("Revoke signing error:", err.message);
-    res.status(400).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Revoke signing error:", message);
+    res.status(400).json({ error: message });
   }
 });
 
@@ -185,9 +187,10 @@ app.post("/api/verify-and-sign-agent", async (req, res) => {
     const signature = await account.signMessage({ message: { raw: hash } });
 
     res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
-  } catch (err: any) {
-    console.error("Agent signing error:", err.message);
-    res.status(400).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Agent signing error:", message);
+    res.status(400).json({ error: message });
   }
 });
 
@@ -215,9 +218,10 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
     const signature = await account.signMessage({ message: { raw: hash } });
 
     res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
-  } catch (err: any) {
-    console.error("Revoke agent signing error:", err.message);
-    res.status(400).json({ error: err.message });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Revoke agent signing error:", message);
+    res.status(400).json({ error: message });
   }
 });
 
