@@ -2,7 +2,6 @@
 
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { Button } from "@/components/ui/button";
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount();
@@ -12,19 +11,26 @@ export function ConnectButton() {
   if (isConnected && address) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm font-mono text-muted-foreground">
+        <span className="font-mono text-sm text-muted-foreground">
           {address.slice(0, 6)}...{address.slice(-4)}
         </span>
-        <Button variant="outline" size="sm" onClick={() => disconnect()}>
+        <button
+          onClick={() => disconnect()}
+          className="rounded-full border border-[var(--border-subtle)] px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
           Disconnect
-        </Button>
+        </button>
       </div>
     );
   }
 
   return (
-    <Button onClick={() => connect({ connector: injected() })} disabled={isPending}>
+    <button
+      onClick={() => connect({ connector: injected() })}
+      disabled={isPending}
+      className="rounded-full bg-foreground px-5 py-1.5 text-[13px] font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+    >
       {isPending ? "Connecting..." : "Connect Wallet"}
-    </Button>
+    </button>
   );
 }
