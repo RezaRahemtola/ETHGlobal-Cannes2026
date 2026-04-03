@@ -4,33 +4,52 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { MiniKit } from "@worldcoin/minikit-js";
+import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { ConnectButton } from "@/components/connect-button";
 import { StepIndicator } from "@/components/step-indicator";
 import { useEnsNames } from "@/hooks/use-ens-names";
 import { useSetTextRecord } from "@/hooks/use-set-text-record";
+import { useIdkitVerify } from "@/hooks/use-idkit-verify";
 import { cn } from "@/lib/utils";
 
 export default function LinkPage() {
   const router = useRouter();
   const { isConnected } = useAccount();
+  const { names, isLoading: loadingNames } = useEnsNames();
+  const [selectedName, setSelectedName] = useState<string | null>(null);
 
   useEffect(() => {
     if (MiniKit.isInstalled()) {
       router.replace("/app");
     }
   }, [router]);
-  const { names, isLoading: loadingNames } = useEnsNames();
-  const [selectedName, setSelectedName] = useState<string | null>(null);
 
-  // Auto-select first name when names load
   useEffect(() => {
     if (names.length > 0 && !selectedName) {
       setSelectedName(names[0]);
     }
   }, [names, selectedName]);
-  const { setTextRecord, isPending, isConfirming, isSuccess, hash, error } = useSetTextRecord();
 
-  const label = selectedName?.replace(/\.eth$/, "");
+  const { setTextRecord, isPending, isConfirming, isSuccess, hash, error } = useSetTextRecord();
+  const {
+    rpContext,
+    isLoadingRp,
+    fetchRpContext,
+    nullifier,
+    verifyNullifier,
+    error: idkitError,
+    appId,
+    action,
+  } = useIdkitVerify();
+
+  const [idkitOpen, setIdkitOpen] = useState(false);
+
+  const hasVerified = !!nullifier;
+
+  async function handleStartVerify() {
+    await fetchRpContext();
+    setIdkitOpen(true);
+  }
 
   if (isSuccess) {
     return (
@@ -54,9 +73,7 @@ export default function LinkPage() {
             Record Set
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            <code style={{ color: "#3889FF" }}>humanens</code>
-            {" = "}
-            <code style={{ color: "#6EE7B7" }}>{label}.humanens.eth</code>
+            Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
           </p>
           {hash && (
             <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
@@ -66,8 +83,7 @@ export default function LinkPage() {
           <div className="mt-6 space-y-1">
             <p className="font-medium">Continue in World App</p>
             <p className="text-sm text-muted-foreground">
-              Open the HumanENS Mini App in World App to verify with World ID and claim your
-              subname.
+              Open the HumanENS Mini App in World App to claim your subname.
             </p>
           </div>
         </div>
@@ -82,7 +98,7 @@ export default function LinkPage() {
       <div className="pt-2 animate-fade-in-up">
         <h1 className="text-2xl font-bold tracking-tight">Link your ENS name</h1>
         <p className="text-sm text-muted-foreground">
-          Set a text record on your .eth name to prove ownership
+          Verify your World ID and set a text record on your .eth name
         </p>
       </div>
 
@@ -131,11 +147,61 @@ export default function LinkPage() {
         )}
       </div>
 
+      {/* World ID verification */}
+      <div
+        className={cn(
+          "glass-card animate-fade-in-up delay-300 rounded-xl p-4",
+          !selectedName && "pointer-events-none opacity-40",
+        )}
+      >
+        <p className="mb-2 text-xs text-muted-foreground">World ID Verification</p>
+        {hasVerified ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm" style={{ color: "#6EE7B7" }}>
+              &#x2713; Verified
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              {nullifier?.slice(0, 10)}...{nullifier?.slice(-6)}
+            </span>
+          </div>
+        ) : (
+          <button
+            className="w-full rounded-lg h-11 text-sm font-medium transition-all hover:scale-[1.01] disabled:opacity-50"
+            style={{
+              background: "linear-gradient(135deg, #6EE7B7, #3889FF)",
+              color: "#09090b",
+            }}
+            disabled={!selectedName || isLoadingRp}
+            onClick={handleStartVerify}
+          >
+            {isLoadingRp ? "Loading..." : "Verify with World ID"}
+          </button>
+        )}
+      </div>
+
+      {/* IDKit widget */}
+      {rpContext && (
+        <IDKitRequestWidget
+          open={idkitOpen}
+          onOpenChange={setIdkitOpen}
+          app_id={appId as `app_${string}`}
+          action={action}
+          rp_context={rpContext}
+          allow_legacy_proofs={true}
+          preset={orbLegacy()}
+          handleVerify={async (result) => {
+            await verifyNullifier(result);
+          }}
+          onSuccess={() => {}}
+          onError={(code) => console.error("IDKit error", code)}
+        />
+      )}
+
       {/* Preview */}
       <div
         className={cn(
           "animate-fade-in-up delay-300 rounded-xl p-4",
-          !selectedName && "pointer-events-none opacity-40",
+          !hasVerified && "pointer-events-none opacity-40",
         )}
         style={{
           border: "1px solid rgba(110,231,183,0.1)",
@@ -147,7 +213,9 @@ export default function LinkPage() {
         <p className="text-[15px]">
           <code style={{ color: "#3889FF" }}>humanens</code>
           <span style={{ color: "rgba(255,255,255,0.2)" }}> = </span>
-          <code style={{ color: "#6EE7B7" }}>{label || "..."}.humanens.eth</code>
+          <code className="text-xs break-all" style={{ color: "#6EE7B7" }}>
+            {nullifier || "..."}
+          </code>
         </p>
       </div>
 
@@ -155,13 +223,17 @@ export default function LinkPage() {
       <button
         className="w-full rounded-full bg-white text-[#0a0a0a] h-12 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
         style={{ backgroundColor: "#fafafa", color: "#0a0a0a" }}
-        disabled={!selectedName || isPending || isConfirming}
-        onClick={() => selectedName && setTextRecord(selectedName)}
+        disabled={!hasVerified || isPending || isConfirming}
+        onClick={() => selectedName && nullifier && setTextRecord(selectedName, nullifier)}
       >
         {isPending ? "Confirm in wallet..." : isConfirming ? "Confirming..." : "Set Record"}
       </button>
 
-      {error && <p className="text-center text-sm text-destructive">{error.message}</p>}
+      {(error || idkitError) && (
+        <p className="text-center text-sm text-destructive">
+          {(error as Error)?.message || idkitError}
+        </p>
+      )}
     </main>
   );
 }

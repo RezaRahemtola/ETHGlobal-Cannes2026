@@ -24,9 +24,7 @@ export function useSetTextRecord() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  function setTextRecord(ensName: string) {
-    const label = ensName.replace(/\.eth$/, "");
-    const value = `${label}.humanens.eth`;
+  function setTextRecord(ensName: string, value: string) {
     const node = namehash(ensName);
 
     writeContract({
