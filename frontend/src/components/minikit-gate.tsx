@@ -1,6 +1,6 @@
 "use client";
 
-import { MiniKit } from "@worldcoin/minikit-js";
+import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { usePathname } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import type { ReactNode } from "react";
@@ -76,7 +76,9 @@ function MiniKitGateScreen() {
 }
 
 export function MiniKitGate({ children }: { children: ReactNode }) {
-  if (!MiniKit.isInstalled()) {
+  const { isInstalled } = useMiniKit();
+
+  if (!isInstalled) {
     return <MiniKitGateScreen />;
   }
 
