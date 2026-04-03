@@ -6,8 +6,13 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   reactStrictMode: false,
+  turbopack: {
+    resolveAlias: {
+      "@react-native-async-storage/async-storage": "",
+      "pino-pretty": "",
+    },
+  },
   webpack: (config) => {
-    // Stub out optional deps that wagmi connectors pull in but don't need
     config.resolve.fallback = {
       ...config.resolve.fallback,
       "@react-native-async-storage/async-storage": false,
