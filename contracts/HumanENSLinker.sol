@@ -157,14 +157,10 @@ contract HumanENSLinker {
                 "Proof expired"
             );
             require(proofSourceNode == sourceNode, "SourceNode mismatch");
-            require(
-                keccak256(bytes(value)) ==
-                    keccak256(
-                        bytes(string(abi.encodePacked(label, ".humanens.eth")))
-                    ),
-                "Text record mismatch"
-            );
-            require(ensOwner == registrant, "Not ENS owner");
+            // Text record now stores the nullifier hex string
+            // Parse it and verify it matches the World ID nullifier from attestation
+            bytes32 recordNullifier = _hexToBytes32(value);
+            require(recordNullifier == nullifierHash, "Nullifier mismatch");
             bytes32 proofHash = keccak256(
                 abi.encodePacked(
                     proofSourceNode,
@@ -323,13 +319,18 @@ contract HumanENSLinker {
                 "Bad gateway sig"
             );
 
-            bool textValid = keccak256(bytes(value)) ==
-                keccak256(
-                    bytes(string(abi.encodePacked(label, ".humanens.eth")))
-                );
-            bool ownerValid = ensOwner ==
-                nullifierToRegistrant[sourceNodeToNullifier[sourceNode]];
-            require(!textValid || !ownerValid, "Link still valid");
+            // Check if the text record nullifier still matches the stored nullifier
+            bytes32 storedNullifier = sourceNodeToNullifier[sourceNode];
+            bool nullifierValid;
+            {
+                bytes memory valueBytes = bytes(value);
+                if (valueBytes.length == 66) {
+                    bytes32 recordNullifier = _hexToBytes32(value);
+                    nullifierValid = recordNullifier == storedNullifier;
+                }
+                // If length != 66, nullifierValid stays false (record changed/cleared)
+            }
+            require(!nullifierValid, "Link still valid");
         }
 
         // Stale — clear state then burn (checks-effects-interactions)
@@ -515,5 +516,25 @@ contract HumanENSLinker {
         delete nullifierToRegistrant[nullifier];
         delete sourceNodeToNullifier[sourceNode];
         delete labelHashToSourceNode[keccak256(bytes(label))];
+    }
+
+    /// @dev Parses a 66-char hex string ("0x" + 64 hex chars) into bytes32.
+    function _hexToBytes32(string memory s) internal pure returns (bytes32 result) {
+        bytes memory b = bytes(s);
+        require(b.length == 66, "Bad hex length");
+        require(b[0] == "0" && (b[1] == "x" || b[1] == "X"), "No 0x prefix");
+        for (uint256 i = 2; i < 66; i++) {
+            uint8 hi = _fromHexChar(uint8(b[i]));
+            i++;
+            uint8 lo = _fromHexChar(uint8(b[i]));
+            result = bytes32(uint256(result) | uint256(uint8((hi << 4) | lo)) << (8 * (31 - ((i - 2) / 2))));
+        }
+    }
+
+    function _fromHexChar(uint8 c) internal pure returns (uint8) {
+        if (c >= 48 && c <= 57) return c - 48;        // 0-9
+        if (c >= 97 && c <= 102) return c - 87;        // a-f
+        if (c >= 65 && c <= 70) return c - 55;         // A-F
+        revert("Bad hex char");
     }
 }
