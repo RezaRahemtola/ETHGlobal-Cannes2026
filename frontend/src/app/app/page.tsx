@@ -55,17 +55,13 @@ function RegisterFlow() {
         <StepIndicator currentStep={3} />
         <Card className="mt-6 text-center">
           <CardHeader>
-            <CardTitle className="text-green-400">
-              {label}.humanens.eth is live ✓
-            </CardTitle>
+            <CardTitle className="text-green-400">{label}.humanens.eth is live ✓</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Your verified HumanENS subname has been registered.
             </p>
-            {txHash && (
-              <p className="text-xs text-muted-foreground break-all">Tx: {txHash}</p>
-            )}
+            {txHash && <p className="text-xs text-muted-foreground break-all">Tx: {txHash}</p>}
             <Link
               href="/app/manage"
               className="inline-flex mt-4 h-9 items-center justify-center rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground"
@@ -84,9 +80,7 @@ function RegisterFlow() {
 
       <div>
         <h1 className="text-2xl font-bold">Register your subname</h1>
-        <p className="text-muted-foreground">
-          Verify your identity and claim your .humanens.eth
-        </p>
+        <p className="text-muted-foreground">Verify your identity and claim your .humanens.eth</p>
       </div>
 
       {/* Label input */}

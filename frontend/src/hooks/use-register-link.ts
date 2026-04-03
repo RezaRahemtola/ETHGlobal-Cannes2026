@@ -7,7 +7,15 @@ import { buildRegisterLinkCallbackArgs } from "@/lib/ccip-read";
 import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 
-type Status = "idle" | "verifying" | "attesting" | "ccip" | "sending" | "confirming" | "success" | "error";
+type Status =
+  | "idle"
+  | "verifying"
+  | "attesting"
+  | "ccip"
+  | "sending"
+  | "confirming"
+  | "success"
+  | "error";
 
 export function useRegisterLink() {
   const [status, setStatus] = useState<Status>("idle");
@@ -84,7 +92,7 @@ export function useRegisterLink() {
       let attempts = 0;
       while (attempts < 30) {
         const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`
+          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
         );
         const statusData = await statusRes.json();
         if (statusData.transactionStatus === "confirmed") {

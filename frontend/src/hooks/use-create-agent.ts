@@ -73,7 +73,7 @@ export function useCreateAgent() {
       let attempts = 0;
       while (attempts < 30) {
         const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`
+          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
         );
         const statusData = await statusRes.json();
         if (statusData.transactionStatus === "confirmed") {

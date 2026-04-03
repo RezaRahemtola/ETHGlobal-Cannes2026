@@ -19,7 +19,14 @@ import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL, WORLD_ACTION_ID } from "@/lib/constants";
 
 // ---- Revoke hook (inline, similar to create) ----
-type RevokeStatus = "idle" | "verifying" | "attesting" | "sending" | "confirming" | "success" | "error";
+type RevokeStatus =
+  | "idle"
+  | "verifying"
+  | "attesting"
+  | "sending"
+  | "confirming"
+  | "success"
+  | "error";
 
 function useRevokeAgent() {
   const [status, setStatus] = useState<RevokeStatus>("idle");
@@ -73,13 +80,7 @@ function useRevokeAgent() {
             address: HUMANENS_LINKER_ADDRESS,
             abi: humanENSLinkerABI,
             functionName: "revokeAgentSubname",
-            args: [
-              args.parentLabel,
-              args.agentLabel,
-              nullifierHash,
-              BigInt(timestamp),
-              signature,
-            ],
+            args: [args.parentLabel, args.agentLabel, nullifierHash, BigInt(timestamp), signature],
           },
         ],
       });
@@ -92,7 +93,7 @@ function useRevokeAgent() {
       let attempts = 0;
       while (attempts < 30) {
         const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`
+          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
         );
         const statusData = await statusRes.json();
         if (statusData.transactionStatus === "confirmed") {
@@ -118,7 +119,10 @@ function useRevokeAgent() {
 }
 
 // ---- Agent card ----
-function AgentCard({ agent, onRevoked }: {
+function AgentCard({
+  agent,
+  onRevoked,
+}: {
   agent: { parentLabel: string; agentLabel: string; agentAddress: string; fullName: string };
   onRevoked: () => void;
 }) {
@@ -143,7 +147,9 @@ function AgentCard({ agent, onRevoked }: {
       <Card className="border-destructive/30 bg-destructive/5">
         <CardContent className="pt-4">
           <p className="text-sm text-muted-foreground line-through">{agent.fullName}</p>
-          <Badge variant="destructive" className="mt-1">Revoked</Badge>
+          <Badge variant="destructive" className="mt-1">
+            Revoked
+          </Badge>
         </CardContent>
       </Card>
     );
@@ -154,18 +160,22 @@ function AgentCard({ agent, onRevoked }: {
       <CardContent className="pt-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium truncate">{agent.agentLabel}.{agent.parentLabel}.humanens.eth</p>
-            <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">{agent.agentAddress}</p>
+            <p className="text-sm font-medium truncate">
+              {agent.agentLabel}.{agent.parentLabel}.humanens.eth
+            </p>
+            <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+              {agent.agentAddress}
+            </p>
           </div>
-          <Badge variant="outline" className="shrink-0 text-green-400 border-green-400/30">Active</Badge>
+          <Badge variant="outline" className="shrink-0 text-green-400 border-green-400/30">
+            Active
+          </Badge>
         </div>
 
         {isBusy && (
           <p className="text-xs text-muted-foreground animate-pulse">{statusLabel[status]}</p>
         )}
-        {error && (
-          <p className="text-xs text-destructive">{error}</p>
-        )}
+        {error && <p className="text-xs text-destructive">{error}</p>}
 
         <div className="flex gap-2">
           {error ? (
@@ -199,9 +209,15 @@ function ManageFlow() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { agents, isLoading } = useAgents(submittedLabel);
-  const { createAgent, status: createStatus, error: createError, reset: createReset } = useCreateAgent();
+  const {
+    createAgent,
+    status: createStatus,
+    error: createError,
+    reset: createReset,
+  } = useCreateAgent();
 
-  const isCreating = createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
+  const isCreating =
+    createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
 
   const createStatusLabel: Record<string, string> = {
     attesting: "Getting attestation...",
@@ -251,13 +267,17 @@ function ManageFlow() {
     <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Manage Agents</h1>
-        <p className="text-muted-foreground text-sm">Create and revoke agent subnames for your HumanENS identity</p>
+        <p className="text-muted-foreground text-sm">
+          Create and revoke agent subnames for your HumanENS identity
+        </p>
       </div>
 
       {/* Parent label lookup */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-normal text-muted-foreground">Your HumanENS label</CardTitle>
+          <CardTitle className="text-sm font-normal text-muted-foreground">
+            Your HumanENS label
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
@@ -298,7 +318,9 @@ function ManageFlow() {
             ) : agents.length === 0 ? (
               <Card>
                 <CardContent className="pt-4">
-                  <p className="text-sm text-muted-foreground text-center">No active agents for {submittedLabel}.humanens.eth</p>
+                  <p className="text-sm text-muted-foreground text-center">
+                    No active agents for {submittedLabel}.humanens.eth
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -332,12 +354,16 @@ function ManageFlow() {
                       disabled={isCreating}
                       className="flex-1"
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">.{submittedLabel}.humanens.eth</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      .{submittedLabel}.humanens.eth
+                    </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Agent wallet address</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">
+                    Agent wallet address
+                  </label>
                   <Input
                     placeholder="0x..."
                     value={agentAddress}
@@ -370,11 +396,7 @@ function ManageFlow() {
                       Reset
                     </Button>
                   )}
-                  <Button
-                    className="flex-1"
-                    onClick={handleCreate}
-                    disabled={!canCreate}
-                  >
+                  <Button className="flex-1" onClick={handleCreate} disabled={!canCreate}>
                     {isCreating ? "Processing..." : "Create Agent (Gas Free)"}
                   </Button>
                 </div>

@@ -9,9 +9,7 @@ export function StepIndicator({ currentStep, totalSteps = 3 }: StepIndicatorProp
       {Array.from({ length: totalSteps }, (_, i) => (
         <div
           key={i}
-          className={`h-1 flex-1 rounded-full ${
-            i < currentStep ? "bg-primary" : "bg-muted"
-          }`}
+          className={`h-1 flex-1 rounded-full ${i < currentStep ? "bg-primary" : "bg-muted"}`}
         />
       ))}
     </div>

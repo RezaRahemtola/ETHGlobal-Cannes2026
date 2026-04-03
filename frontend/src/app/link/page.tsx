@@ -30,13 +30,12 @@ export default function LinkPage() {
               <code className="text-blue-400">humanens</code> ={" "}
               <code className="text-green-400">{label}.humanens.eth</code>
             </p>
-            {hash && (
-              <p className="text-xs text-muted-foreground break-all">Tx: {hash}</p>
-            )}
+            {hash && <p className="text-xs text-muted-foreground break-all">Tx: {hash}</p>}
             <div className="pt-4 space-y-2">
               <p className="font-semibold">Continue in World App</p>
               <p className="text-sm text-muted-foreground">
-                Open the HumanENS Mini App in World App to verify with World ID and claim your subname.
+                Open the HumanENS Mini App in World App to verify with World ID and claim your
+                subname.
               </p>
             </div>
           </CardContent>
@@ -51,7 +50,9 @@ export default function LinkPage() {
 
       <div>
         <h1 className="text-2xl font-bold">Link your ENS name</h1>
-        <p className="text-muted-foreground">Set a text record on your .eth name to prove ownership</p>
+        <p className="text-muted-foreground">
+          Set a text record on your .eth name to prove ownership
+        </p>
       </div>
 
       {/* Connect wallet */}
@@ -65,7 +66,9 @@ export default function LinkPage() {
       {/* Select ENS name */}
       <Card className={!isConnected ? "opacity-50 pointer-events-none" : ""}>
         <CardHeader>
-          <CardTitle className="text-sm font-normal text-muted-foreground">Your ENS names</CardTitle>
+          <CardTitle className="text-sm font-normal text-muted-foreground">
+            Your ENS names
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingNames ? (
@@ -95,7 +98,9 @@ export default function LinkPage() {
       {/* Preview */}
       <Card className={!selectedName ? "opacity-50 pointer-events-none" : ""}>
         <CardHeader>
-          <CardTitle className="text-sm font-normal text-muted-foreground">Will set text record</CardTitle>
+          <CardTitle className="text-sm font-normal text-muted-foreground">
+            Will set text record
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm">

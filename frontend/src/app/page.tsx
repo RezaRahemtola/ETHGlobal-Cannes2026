@@ -8,8 +8,8 @@ export default function Home() {
       <section className="flex flex-col items-center justify-center gap-6 px-4 py-24 text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">HumanENS</h1>
         <p className="max-w-md text-lg text-muted-foreground">
-          Biometric-bound ENS identities using World ID. Prove you&apos;re human on-chain,
-          protect your name, give your AI agents identity.
+          Biometric-bound ENS identities using World ID. Prove you&apos;re human on-chain, protect
+          your name, give your AI agents identity.
         </p>
         <div className="flex gap-3">
           <Link
@@ -34,9 +34,27 @@ export default function Home() {
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { step: 1, title: "Set ENS record", desc: "Connect your wallet and link your .eth name", context: "Browser", color: "text-blue-400" },
-            { step: 2, title: "Verify with World ID", desc: "Prove you're a unique human with Orb verification", context: "World App", color: "text-purple-400" },
-            { step: 3, title: "Get your .humanens.eth", desc: "Claim your verified subname and add AI agents", context: "World App", color: "text-green-400" },
+            {
+              step: 1,
+              title: "Set ENS record",
+              desc: "Connect your wallet and link your .eth name",
+              context: "Browser",
+              color: "text-blue-400",
+            },
+            {
+              step: 2,
+              title: "Verify with World ID",
+              desc: "Prove you're a unique human with Orb verification",
+              context: "World App",
+              color: "text-purple-400",
+            },
+            {
+              step: 3,
+              title: "Get your .humanens.eth",
+              desc: "Claim your verified subname and add AI agents",
+              context: "World App",
+              color: "text-green-400",
+            },
           ].map(({ step, title, desc, context, color }) => (
             <div key={step} className="rounded-lg border bg-card p-4 text-center">
               <div className={`text-lg font-bold ${color}`}>{step}</div>

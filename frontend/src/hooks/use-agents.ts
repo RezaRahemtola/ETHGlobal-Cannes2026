@@ -39,7 +39,7 @@ export function useAgents(parentLabel: string) {
         const createdLogs = await client.getLogs({
           address: HUMANENS_LINKER_ADDRESS,
           event: parseAbiItem(
-            "event AgentCreated(string parentLabel, string agentLabel, address agentAddress)"
+            "event AgentCreated(string parentLabel, string agentLabel, address agentAddress)",
           ),
           fromBlock: BigInt(0),
           toBlock: "latest",
@@ -47,22 +47,20 @@ export function useAgents(parentLabel: string) {
 
         const revokedLogs = await client.getLogs({
           address: HUMANENS_LINKER_ADDRESS,
-          event: parseAbiItem(
-            "event AgentRevoked(string parentLabel, string agentLabel)"
-          ),
+          event: parseAbiItem("event AgentRevoked(string parentLabel, string agentLabel)"),
           fromBlock: BigInt(0),
           toBlock: "latest",
         });
 
         const revokedSet = new Set(
-          revokedLogs.map((l) => `${l.args.parentLabel}:${l.args.agentLabel}`)
+          revokedLogs.map((l) => `${l.args.parentLabel}:${l.args.agentLabel}`),
         );
 
         const activeAgents = createdLogs
           .filter(
             (l) =>
               l.args.parentLabel === parentLabel &&
-              !revokedSet.has(`${l.args.parentLabel}:${l.args.agentLabel}`)
+              !revokedSet.has(`${l.args.parentLabel}:${l.args.agentLabel}`),
           )
           .map((l) => ({
             parentLabel: l.args.parentLabel!,

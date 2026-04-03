@@ -8,10 +8,9 @@ import { config } from "@/lib/wagmi-config";
 import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 
-const ErudaProvider = dynamic(
-  () => import("@/providers/Eruda").then((c) => c.ErudaProvider),
-  { ssr: false }
-);
+const ErudaProvider = dynamic(() => import("@/providers/Eruda").then((c) => c.ErudaProvider), {
+  ssr: false,
+});
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());

@@ -1,10 +1,4 @@
-import {
-  createPublicClient,
-  http,
-  decodeErrorResult,
-  encodeFunctionData,
-  type Hex,
-} from "viem";
+import { createPublicClient, http, decodeErrorResult, encodeFunctionData, type Hex } from "viem";
 import { humanENSLinkerABI } from "./contracts";
 import { HUMANENS_LINKER_ADDRESS } from "./constants";
 
@@ -69,8 +63,13 @@ export async function buildRegisterLinkCalldata(args: {
       throw new Error(`Unexpected error: ${decoded.errorName}`);
     }
 
-    const [, urls, cData, callbackSelector, extraData] =
-      decoded.args as unknown as [string, string[], Hex, Hex, Hex];
+    const [, urls, cData, callbackSelector, extraData] = decoded.args as unknown as [
+      string,
+      string[],
+      Hex,
+      Hex,
+      Hex,
+    ];
 
     offchainData = { urls, callData: cData, callbackSelector, extraData };
   }
@@ -139,8 +138,13 @@ export async function buildRegisterLinkCallbackArgs(args: {
       throw new Error(`Unexpected error: ${decoded.errorName}`);
     }
 
-    const [, urls, cData, callbackSelector, extraData] =
-      decoded.args as unknown as [string, string[], Hex, Hex, Hex];
+    const [, urls, cData, callbackSelector, extraData] = decoded.args as unknown as [
+      string,
+      string[],
+      Hex,
+      Hex,
+      Hex,
+    ];
 
     offchainData = { urls, callData: cData, callbackSelector, extraData };
   }
