@@ -84,7 +84,7 @@ contract HumanENSLinker {
         string calldata sourceName,
         bytes32 sourceNode,
         bytes calldata attestationData
-    ) external {
+    ) external view {
         revert OffchainLookup(
             address(this),
             _urls(),
@@ -253,7 +253,7 @@ contract HumanENSLinker {
     function challengeLink(
         string calldata label,
         string calldata sourceName
-    ) external {
+    ) external view {
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
         require(subnameExists[node], "No link");
