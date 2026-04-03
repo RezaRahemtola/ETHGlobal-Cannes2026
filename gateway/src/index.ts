@@ -18,7 +18,8 @@ import { privateKeyToAccount } from "viem/accounts";
 const GATEWAY_SIGNER_KEY = process.env.GATEWAY_SIGNER_PRIVATE_KEY as Hex;
 if (!GATEWAY_SIGNER_KEY) throw new Error("GATEWAY_SIGNER_PRIVATE_KEY required");
 
-const ETH_RPC = process.env.ETH_RPC_URL || "https://eth-mainnet.g.alchemy.com/v2/demo";
+const ETH_RPC = process.env.ETH_RPC_URL;
+if (!ETH_RPC) throw new Error("ETH_RPC_URL required");
 const PORT = Number(process.env.PORT) || 3001;
 
 const account = privateKeyToAccount(GATEWAY_SIGNER_KEY);
@@ -81,7 +82,10 @@ async function handleRequest(callData: Hex) {
     callData,
   );
 
-  // Fix #2: verify sourceNode matches the name
+  // Validate inputs
+  if (key !== "humanens") {
+    throw new Error(`Invalid key: expected "humanens", got "${key}"`);
+  }
   const expectedNode = namehash(ensName);
   if (expectedNode !== sourceNode) {
     throw new Error(

@@ -16,6 +16,12 @@ const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 // ─── World ID cloud verification ────────────────────────────────────
 
 async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: string }> {
+  // Verify action matches our expected action
+  const result = idkitResult as Record<string, unknown>;
+  if (result.action && result.action !== WORLD_ID_ACTION) {
+    throw new Error(`Action mismatch: expected "${WORLD_ID_ACTION}", got "${result.action}"`);
+  }
+
   const res = await fetch(`https://developer.world.org/api/v4/verify/${WORLD_ID_RP_ID}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -33,17 +39,18 @@ async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: str
 // ─── Sign attestation ────────────────────────────────────────────────
 
 async function signAttestation(
+  action: string,
   registrant: Hex,
   nullifierHash: Hex,
   sourceNode: Hex,
   label: string,
   timestamp: bigint,
 ): Promise<Hex> {
-  // Must match contract: keccak256(abi.encodePacked(registrant, nullifierHash, sourceNode, label, timestamp))
+  // Must match contract: keccak256(abi.encodePacked(action, registrant, nullifierHash, sourceNode, label, timestamp))
   const hash = keccak256(
     encodePacked(
-      ["address", "bytes32", "bytes32", "string", "uint256"],
-      [registrant, nullifierHash, sourceNode, label, timestamp],
+      ["string", "address", "bytes32", "bytes32", "string", "uint256"],
+      [action, registrant, nullifierHash, sourceNode, label, timestamp],
     ),
   );
   return account.signMessage({ message: { raw: hash } });
@@ -97,6 +104,7 @@ app.post("/api/verify-and-attest", async (req, res) => {
     // Step 2: Sign attestation for the Linker contract
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
     const signature = await signAttestation(
+      "register",
       registrant as Hex,
       nullifierHash as Hex,
       sourceNode as Hex,
@@ -139,8 +147,8 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
     const { nullifierHash } = await verifyWorldId(idkitResult);
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
 
-    // Same hash format as registerLink attestation
     const signature = await signAttestation(
+      "revoke",
       registrant as Hex,
       nullifierHash as Hex,
       sourceNode as Hex,
@@ -173,8 +181,9 @@ app.post("/api/verify-and-sign-agent", async (req, res) => {
 
     const hash = keccak256(
       encodePacked(
-        ["address", "bytes32", "string", "string", "address", "uint256"],
+        ["string", "address", "bytes32", "string", "string", "address", "uint256"],
         [
+          "createAgent",
           registrant as Hex,
           nullifierHash as Hex,
           parentLabel,
@@ -211,8 +220,8 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
 
     const hash = keccak256(
       encodePacked(
-        ["address", "bytes32", "string", "string", "uint256"],
-        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp],
+        ["string", "address", "bytes32", "string", "string", "uint256"],
+        ["revokeAgent", registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp],
       ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });

@@ -125,6 +125,7 @@ contract HumanENSLinker {
             );
             bytes32 attHash = keccak256(
                 abi.encodePacked(
+                    "register",
                     registrant,
                     nullifierHash,
                     sourceNode,
@@ -229,6 +230,7 @@ contract HumanENSLinker {
         require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
         bytes32 h = keccak256(
             abi.encodePacked(
+                "revoke",
                 msg.sender,
                 nullifierHash,
                 sourceNode,
@@ -238,10 +240,11 @@ contract HumanENSLinker {
         );
         require(_recover(h, sig) == backendSigner, "Bad backend sig");
 
+        _clearLink(nullifierHash, sourceNode, label);
+
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);
         registry.burn(uint256(node));
-        _clearLink(nullifierHash, sourceNode, label);
 
         emit LinkRevoked(label, sourceNode);
     }
@@ -281,6 +284,10 @@ contract HumanENSLinker {
         ) = abi.decode(extraData, (address, string, bytes32, bytes32));
 
         // Re-derive node from label — don't trust extraData
+        require(
+            labelHashToSourceNode[keccak256(bytes(label))] == sourceNode,
+            "Label mismatch"
+        );
         bytes32 node = registry.makeNode(registry.baseNode(), label);
 
         // Verify gateway response + check validity in scoped block
@@ -322,10 +329,10 @@ contract HumanENSLinker {
             require(!textValid || !ownerValid, "Link still valid");
         }
 
-        // Stale — burn and clear
+        // Stale — clear state then burn (checks-effects-interactions)
         bytes32 nullifier = sourceNodeToNullifier[sourceNode];
-        registry.burn(uint256(node));
         _clearLink(nullifier, sourceNode, label);
+        registry.burn(uint256(node));
 
         emit LinkChallenged(label, sourceNode, challenger);
     }
@@ -347,6 +354,7 @@ contract HumanENSLinker {
             );
             bytes32 h = keccak256(
                 abi.encodePacked(
+                    "createAgent",
                     msg.sender,
                     nullifierHash,
                     parentLabel,
@@ -410,6 +418,7 @@ contract HumanENSLinker {
         require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
         bytes32 h = keccak256(
             abi.encodePacked(
+                "revokeAgent",
                 msg.sender,
                 nullifierHash,
                 parentLabel,
