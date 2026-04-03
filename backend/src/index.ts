@@ -126,6 +126,97 @@ app.post("/api/verify-and-attest", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/verify-and-sign-revoke
+ * Body: { idkitResult, registrant, nullifierHash, sourceNode, label }
+ * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, sourceNode, label, timestamp))
+ */
+app.post("/api/verify-and-sign-revoke", async (req, res) => {
+  try {
+    const { idkitResult, registrant, sourceNode, label } = req.body;
+    if (!idkitResult || !registrant || !sourceNode || !label) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const { nullifierHash } = await verifyWorldId(idkitResult);
+    const timestamp = BigInt(Math.floor(Date.now() / 1000));
+
+    // Same hash format as registerLink attestation
+    const signature = await signAttestation(
+      registrant as Hex,
+      nullifierHash as Hex,
+      sourceNode as Hex,
+      label,
+      timestamp
+    );
+
+    res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
+  } catch (err: any) {
+    console.error("Revoke signing error:", err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/verify-and-sign-agent
+ * Body: { idkitResult, registrant, parentLabel, agentLabel, agentAddress }
+ * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, parentLabel, agentLabel, agentAddress, timestamp))
+ */
+app.post("/api/verify-and-sign-agent", async (req, res) => {
+  try {
+    const { idkitResult, registrant, parentLabel, agentLabel, agentAddress } = req.body;
+    if (!idkitResult || !registrant || !parentLabel || !agentLabel || !agentAddress) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const { nullifierHash } = await verifyWorldId(idkitResult);
+    const timestamp = BigInt(Math.floor(Date.now() / 1000));
+
+    const hash = keccak256(
+      encodePacked(
+        ["address", "bytes32", "string", "string", "address", "uint256"],
+        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, agentAddress as Hex, timestamp]
+      )
+    );
+    const signature = await account.signMessage({ message: { raw: hash } });
+
+    res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
+  } catch (err: any) {
+    console.error("Agent signing error:", err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/verify-and-sign-revoke-agent
+ * Body: { idkitResult, registrant, parentLabel, agentLabel }
+ * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, parentLabel, agentLabel, timestamp))
+ */
+app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
+  try {
+    const { idkitResult, registrant, parentLabel, agentLabel } = req.body;
+    if (!idkitResult || !registrant || !parentLabel || !agentLabel) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const { nullifierHash } = await verifyWorldId(idkitResult);
+    const timestamp = BigInt(Math.floor(Date.now() / 1000));
+
+    const hash = keccak256(
+      encodePacked(
+        ["address", "bytes32", "string", "string", "uint256"],
+        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp]
+      )
+    );
+    const signature = await account.signMessage({ message: { raw: hash } });
+
+    res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
+  } catch (err: any) {
+    console.error("Revoke agent signing error:", err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", signer: account.address, action: WORLD_ID_ACTION });
 });

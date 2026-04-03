@@ -138,6 +138,7 @@ contract HumanENSLinker {
     ) external {
         bytes32 sourceNode = nullifierToSourceNode[nullifierHash];
         require(sourceNode != bytes32(0), "No link");
+        require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "Label mismatch");
 
         require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
         bytes32 h = keccak256(abi.encodePacked(msg.sender, nullifierHash, sourceNode, label, timestamp));
@@ -215,6 +216,7 @@ contract HumanENSLinker {
         bytes32 h = keccak256(abi.encodePacked(msg.sender, nullifierHash, parentLabel, agentLabel, agentAddress, timestamp));
         require(_recover(h, sig) == backendSigner, "Bad backend sig");
         require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
+        require(msg.sender == nullifierToRegistrant[nullifierHash], "Not registrant");
 
         bytes32 baseNode = registry.baseNode();
         bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
