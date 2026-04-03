@@ -55,8 +55,8 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="mx-auto max-w-2xl px-4 py-8">
-        <h2 className="animate-fade-in mb-6 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+      <section id="how-it-works" className="mx-auto max-w-2xl px-4 pt-16 pb-12">
+        <h2 className="animate-fade-in mb-8 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           How it works
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -114,8 +114,8 @@ export default function Home() {
       </section>
 
       {/* Verifier */}
-      <section className="mx-auto max-w-md px-4 py-8 pb-16">
-        <h2 className="animate-fade-in mb-5 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+      <section className="mx-auto max-w-md px-4 pt-16 pb-20">
+        <h2 className="animate-fade-in mb-6 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           Verify a name
         </h2>
         <div className="gradient-border animate-fade-in-up delay-200">

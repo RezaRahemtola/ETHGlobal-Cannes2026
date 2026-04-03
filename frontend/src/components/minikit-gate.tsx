@@ -49,16 +49,18 @@ function MiniKitGateScreen() {
         />
       </div>
 
-      {/* "Open in World App" — visible on small screens only */}
-      <a
-        href={deepLink}
-        className="animate-fade-in-up delay-300 mt-8 inline-flex items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl sm:hidden"
-        style={{ backgroundColor: "#fafafa", color: "#09090b" }}
-      >
-        Open in World App
-      </a>
+      {/* "Open in World App" — mobile only */}
+      {deepLink && (
+        <a
+          href={deepLink}
+          className="animate-fade-in-up delay-300 mt-8 items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl hidden max-[639px]:inline-flex"
+          style={{ backgroundColor: "#fafafa", color: "#09090b" }}
+        >
+          Open in World App
+        </a>
+      )}
 
-      <p className="animate-fade-in delay-400 mt-5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+      <p className="animate-fade-in delay-400 mt-6 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
         or search{" "}
         <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>&quot;HumanENS&quot;</span>{" "}
         in World App
