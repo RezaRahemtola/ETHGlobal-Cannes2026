@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Verifier } from "@/components/verifier";
+import Link from "next/link";
 
 export function Landing({ ctaHref }: { ctaHref: string }) {
   return (
@@ -62,7 +62,7 @@ export function Landing({ ctaHref }: { ctaHref: string }) {
             },
             {
               title: "Verify humanity",
-              desc: "Prove you're unique with World ID Orb",
+              desc: "Prove you're unique with World ID",
               context: "World App",
               color: "#3889FF",
               glowColor: "rgba(56,137,255,0.3)",
