@@ -14,7 +14,7 @@ function MiniKitGateScreen() {
   const deepLink = `worldapp://mini-app?app_id=${WORLD_APP_ID}&path=${encodedPath}`;
 
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center p-4 text-center">
+    <div className="flex min-h-[70vh] flex-col items-center justify-center p-4 pb-12 text-center">
       {/* Iris halo behind QR */}
       <div
         className="pointer-events-none absolute h-[400px] w-[400px]"
@@ -31,7 +31,7 @@ function MiniKitGateScreen() {
       </p>
 
       <div
-        className="animate-fade-in-up delay-200 relative mt-7 rounded-2xl bg-white p-3"
+        className="animate-fade-in-up delay-200 relative mt-8 rounded-2xl bg-white p-3"
         style={{
           boxShadow: "0 0 40px rgba(110,231,183,0.1), 0 0 80px rgba(56,137,255,0.06), 0 8px 32px rgba(0,0,0,0.3)",
         }}
@@ -52,13 +52,13 @@ function MiniKitGateScreen() {
       {/* "Open in World App" — visible on small screens only */}
       <a
         href={deepLink}
-        className="animate-fade-in-up delay-300 mt-5 inline-flex items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl sm:hidden"
+        className="animate-fade-in-up delay-300 mt-8 inline-flex items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl sm:hidden"
         style={{ backgroundColor: "#fafafa", color: "#09090b" }}
       >
         Open in World App
       </a>
 
-      <p className="animate-fade-in delay-400 mt-4 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+      <p className="animate-fade-in delay-400 mt-5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
         or search{" "}
         <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>&quot;HumanENS&quot;</span>{" "}
         in World App

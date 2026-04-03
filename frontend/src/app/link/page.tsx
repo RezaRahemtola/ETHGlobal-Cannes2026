@@ -138,8 +138,8 @@ export default function LinkPage() {
 
       {/* CTA */}
       <button
-        className="w-full rounded-full py-3 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-lg"
-        style={{ backgroundColor: "#fafafa", color: "#09090b" }}
+        className="w-full rounded-full bg-white text-[#0a0a0a] py-3 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
+        style={{ backgroundColor: "#fafafa", color: "#0a0a0a" }}
         disabled={!selectedName || isPending || isConfirming}
         onClick={() => selectedName && setTextRecord(selectedName)}
       >

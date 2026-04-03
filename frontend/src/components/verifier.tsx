@@ -19,7 +19,7 @@ export function Verifier() {
           placeholder="alice.eth"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="h-10 flex-1 rounded-lg px-3 text-sm outline-none transition-all"
+          className="h-11 flex-1 rounded-lg px-4 text-sm outline-none transition-all"
           style={{
             border: "1px solid rgba(255,255,255,0.08)",
             background: "rgba(255,255,255,0.05)",
@@ -37,16 +37,17 @@ export function Verifier() {
         <button
           type="submit"
           disabled={isLoading || !name.trim()}
-          className="h-10 rounded-lg px-5 text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+          className="h-11 rounded-lg px-5 text-sm font-medium transition-all hover:scale-[1.02] hover:brightness-110 disabled:opacity-50 disabled:hover:scale-100"
           style={{
-            border: "1px solid rgba(110,231,183,0.2)",
-            background: "rgba(110,231,183,0.1)",
-            color: "#6EE7B7",
+            background: "linear-gradient(135deg, #6EE7B7, #3889FF)",
+            color: "#09090b",
+            boxShadow: "0 2px 12px rgba(110,231,183,0.25)",
           }}
         >
           {isLoading ? "Checking..." : "Check"}
         </button>
       </form>
+      <p className="text-xs text-muted-foreground">Enter any .eth name to check if it&apos;s verified</p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
