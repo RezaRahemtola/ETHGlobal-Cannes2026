@@ -276,9 +276,12 @@ contract HumanENSLinker {
         (
             address challenger,
             string memory label,
-            bytes32 node,
+            ,
             bytes32 sourceNode
         ) = abi.decode(extraData, (address, string, bytes32, bytes32));
+
+        // Re-derive node from label — don't trust extraData
+        bytes32 node = registry.makeNode(registry.baseNode(), label);
 
         // Verify gateway response + check validity in scoped block
         {
@@ -376,6 +379,11 @@ contract HumanENSLinker {
             existingNullifier == bytes32(0) || nullifierToSourceNode[existingNullifier] == bytes32(0),
             "Agent exists"
         );
+
+        // Burn stale token if re-creating after parent revoke
+        if (existingNullifier != bytes32(0)) {
+            registry.burn(uint256(agentNode));
+        }
 
         agentToParentNullifier[agentNode] = nullifierHash;
 
