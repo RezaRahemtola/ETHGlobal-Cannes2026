@@ -10,11 +10,7 @@ import {
 import { MiniKitGate } from "@/components/minikit-gate";
 import { useAgents } from "@/hooks/use-agents";
 import { useCreateAgent } from "@/hooks/use-create-agent";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL, WORLD_ACTION_ID } from "@/lib/constants";
 
@@ -144,58 +140,62 @@ function AgentCard({
 
   if (status === "success") {
     return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground line-through">{agent.fullName}</p>
-          <Badge variant="destructive" className="mt-1">
-            Revoked
-          </Badge>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 space-y-1">
+        <p className="text-sm text-muted-foreground line-through">{agent.fullName}</p>
+        <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+          Revoked
+        </span>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="pt-4 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium truncate">
-              {agent.agentLabel}.{agent.parentLabel}.humanens.eth
-            </p>
-            <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
-              {agent.agentAddress}
-            </p>
-          </div>
-          <Badge variant="outline" className="shrink-0 text-green-400 border-green-400/30">
-            Active
-          </Badge>
+    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-white truncate">
+            <span>{agent.agentLabel}</span>
+            <span className="text-muted-foreground font-normal">
+              .{agent.parentLabel}.humanens.eth
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+            {agent.agentAddress}
+          </p>
         </div>
+        <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--brand-mint)]/[0.08] px-2.5 py-0.5 text-xs font-medium text-[var(--brand-mint)]">
+          Active
+        </span>
+      </div>
 
-        {isBusy && (
-          <p className="text-xs text-muted-foreground animate-pulse">{statusLabel[status]}</p>
+      {isBusy && (
+        <p className="text-xs text-muted-foreground animate-pulse">{statusLabel[status]}</p>
+      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      <div className="flex gap-2">
+        {error ? (
+          <button
+            onClick={reset}
+            className="flex-1 h-8 rounded-full border border-[var(--border-subtle)] text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Retry
+          </button>
+        ) : (
+          <button
+            onClick={handleRevoke}
+            disabled={isBusy}
+            className={cn(
+              "flex-1 h-8 rounded-full text-xs font-medium transition-colors",
+              "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
+              isBusy && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            {isBusy ? "Processing..." : "Revoke"}
+          </button>
         )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
-
-        <div className="flex gap-2">
-          {error ? (
-            <Button size="sm" variant="outline" onClick={reset} className="flex-1">
-              Retry
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={handleRevoke}
-              disabled={isBusy}
-              className="flex-1"
-            >
-              {isBusy ? "Processing..." : "Revoke"}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -266,45 +266,45 @@ function ManageFlow() {
   return (
     <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Manage Agents</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-2xl font-bold text-white">Manage Agents</h1>
+        <p className="text-muted-foreground text-sm mt-1">
           Create and revoke agent subnames for your HumanENS identity
         </p>
       </div>
 
       {/* Parent label lookup */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-normal text-muted-foreground">
-            Your HumanENS label
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="alice"
-              value={parentLabel}
-              onChange={(e) => setParentLabel(e.target.value.toLowerCase())}
-              className="flex-1"
-            />
-            <span className="text-sm text-muted-foreground shrink-0">.humanens.eth</span>
-          </div>
-          <Button
-            className="w-full"
-            variant="outline"
-            onClick={handleLookup}
-            disabled={!parentLabel.trim()}
-          >
-            Load Agents
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4 space-y-3">
+        <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+          Your HumanENS label
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            placeholder="alice"
+            value={parentLabel}
+            onChange={(e) => setParentLabel(e.target.value.toLowerCase())}
+            className="flex-1 h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40"
+          />
+          <span className="text-sm text-muted-foreground shrink-0">.humanens.eth</span>
+        </div>
+        <button
+          onClick={handleLookup}
+          disabled={!parentLabel.trim()}
+          className={cn(
+            "w-full h-10 rounded-full border border-[var(--border-subtle)] text-sm font-medium text-muted-foreground transition-colors",
+            parentLabel.trim()
+              ? "hover:text-foreground hover:border-[var(--brand-mint)]/40"
+              : "opacity-40 cursor-not-allowed",
+          )}
+        >
+          Load Agents
+        </button>
+      </div>
 
       {/* Agent list */}
       {submittedLabel && (
         <>
           <div>
-            <h2 className="text-base font-semibold mb-3">
+            <h2 className="text-base font-semibold text-white mb-3">
               Active Agents
               {!isLoading && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
@@ -316,13 +316,11 @@ function ManageFlow() {
             {isLoading ? (
               <p className="text-sm text-muted-foreground animate-pulse">Loading agents...</p>
             ) : agents.length === 0 ? (
-              <Card>
-                <CardContent className="pt-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    No active agents for {submittedLabel}.humanens.eth
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  No active agents for {submittedLabel}.humanens.eth
+                </p>
+              </div>
             ) : (
               <div className="space-y-3" key={refreshKey}>
                 {agents.map((agent) => (
@@ -336,72 +334,85 @@ function ManageFlow() {
             )}
           </div>
 
-          <Separator />
+          <div className="h-px bg-[var(--border-subtle)]" />
 
           {/* Create new agent */}
           <div>
-            <h2 className="text-base font-semibold mb-3">Add New Agent</h2>
+            <h2 className="text-base font-semibold text-white mb-3">Add New Agent</h2>
 
-            <Card>
-              <CardContent className="pt-4 space-y-3">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Agent label</label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="my-agent"
-                      value={agentLabel}
-                      onChange={(e) => setAgentLabel(e.target.value.toLowerCase())}
-                      disabled={isCreating}
-                      className="flex-1"
-                    />
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      .{submittedLabel}.humanens.eth
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
-                    Agent wallet address
-                  </label>
-                  <Input
-                    placeholder="0x..."
-                    value={agentAddress}
-                    onChange={(e) => setAgentAddress(e.target.value)}
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+                  Agent label
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    placeholder="my-agent"
+                    value={agentLabel}
+                    onChange={(e) => setAgentLabel(e.target.value.toLowerCase())}
                     disabled={isCreating}
-                    className="font-mono text-sm"
+                    className="flex-1 h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40 disabled:opacity-50"
                   />
-                  {agentAddress && !isAddressValid && (
-                    <p className="text-xs text-destructive mt-1">Invalid address</p>
-                  )}
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    .{submittedLabel}.humanens.eth
+                  </span>
                 </div>
+              </div>
 
-                {isCreating && (
-                  <p className="text-sm text-muted-foreground animate-pulse text-center">
-                    {createStatusLabel[createStatus] ?? "Processing..."}
-                  </p>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+                  Agent wallet address
+                </label>
+                <input
+                  placeholder="0x..."
+                  value={agentAddress}
+                  onChange={(e) => setAgentAddress(e.target.value)}
+                  disabled={isCreating}
+                  className="w-full h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 font-mono text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40 disabled:opacity-50"
+                />
+                {agentAddress && !isAddressValid && (
+                  <p className="text-xs text-destructive mt-1">Invalid address</p>
                 )}
+              </div>
 
-                {createStatus === "success" && (
-                  <p className="text-sm text-green-400 text-center">Agent created successfully!</p>
-                )}
+              {isCreating && (
+                <p className="text-sm text-muted-foreground animate-pulse text-center">
+                  {createStatusLabel[createStatus] ?? "Processing..."}
+                </p>
+              )}
 
+              {createStatus === "success" && (
+                <p className="text-sm text-[var(--brand-mint)] text-center">
+                  Agent created successfully!
+                </p>
+              )}
+
+              {createError && (
+                <p className="text-sm text-destructive text-center">{createError}</p>
+              )}
+
+              <div className="flex gap-2">
                 {createError && (
-                  <p className="text-sm text-destructive text-center">{createError}</p>
+                  <button
+                    onClick={createReset}
+                    className="flex-1 h-10 rounded-full border border-[var(--border-subtle)] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reset
+                  </button>
                 )}
-
-                <div className="flex gap-2">
-                  {createError && (
-                    <Button size="sm" variant="outline" onClick={createReset} className="flex-1">
-                      Reset
-                    </Button>
+                <button
+                  onClick={handleCreate}
+                  disabled={!canCreate}
+                  className={cn(
+                    "flex-1 h-10 rounded-full text-sm font-semibold text-white transition-opacity",
+                    "bg-gradient-to-r from-[var(--brand-mint)] to-[var(--brand-blue)]",
+                    !canCreate && "opacity-40 cursor-not-allowed",
                   )}
-                  <Button className="flex-1" onClick={handleCreate} disabled={!canCreate}>
-                    {isCreating ? "Processing..." : "Create Agent (Gas Free)"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                >
+                  {isCreating ? "Processing..." : "Create Agent (Gas Free)"}
+                </button>
+              </div>
+            </div>
           </div>
         </>
       )}
