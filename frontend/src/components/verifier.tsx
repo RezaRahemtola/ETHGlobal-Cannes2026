@@ -2,10 +2,6 @@
 
 import { useQueryState } from "nuqs";
 import { useVerifyName } from "@/hooks/use-verify-name";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 
 export function Verifier() {
   const [name, setName] = useQueryState("name", { defaultValue: "" });
@@ -17,48 +13,56 @@ export function Verifier() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <Input
+        <input
           placeholder="alice.eth"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="flex-1"
+          className="h-10 flex-1 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 text-sm placeholder:text-muted-foreground/50 outline-none focus:border-[var(--brand-mint)]/30"
         />
-        <Button type="submit" disabled={isLoading || !name.trim()}>
+        <button
+          type="submit"
+          disabled={isLoading || !name.trim()}
+          className="h-10 rounded-lg border border-[var(--brand-mint)]/15 bg-[var(--brand-mint)]/10 px-5 text-sm font-medium text-[var(--brand-mint)] transition-colors hover:bg-[var(--brand-mint)]/15 disabled:opacity-50"
+        >
           {isLoading ? "Checking..." : "Check"}
-        </Button>
+        </button>
       </form>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {result && (
-        <Card>
-          <CardContent className="pt-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-sm">{result.name}</span>
-              {result.isVerified ? (
-                <Badge className="bg-green-500/10 text-green-500">Verified Human</Badge>
-              ) : (
-                <Badge variant="secondary">Not Verified</Badge>
-              )}
-            </div>
-            {result.humanensSubname && (
-              <p className="text-sm text-muted-foreground">Subname: {result.humanensSubname}</p>
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-white/[0.02] p-3.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-sm text-foreground/70">{result.name}</span>
+            {result.isVerified ? (
+              <span className="rounded-full bg-[var(--brand-mint)]/10 px-3 py-1 text-[11px] font-medium text-[var(--brand-mint)]">
+                Verified Human
+              </span>
+            ) : (
+              <span className="rounded-full bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                Not Verified
+              </span>
             )}
-            {result.worldIdLevel && (
-              <p className="text-sm text-muted-foreground">World ID: {result.worldIdLevel}</p>
-            )}
-            {result.isVerified && (
-              <p className="text-xs text-green-500">Bidirectional link verified ✓</p>
-            )}
-            {result.humanensSubname && !result.reverseRecordValid && (
-              <p className="text-xs text-yellow-500">
-                Warning: reverse record not set on {result.name}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+          {result.humanensSubname && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Subname: {result.humanensSubname}
+              {result.worldIdLevel && <> · World ID: {result.worldIdLevel}</>}
+            </p>
+          )}
+          {result.isVerified && (
+            <p className="mt-1 text-xs text-[var(--brand-mint)]/70">
+              Bidirectional link verified
+            </p>
+          )}
+          {result.humanensSubname && !result.reverseRecordValid && (
+            <p className="mt-1 text-xs text-yellow-500">
+              Warning: reverse record not set on {result.name}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
