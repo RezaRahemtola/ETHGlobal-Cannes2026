@@ -46,6 +46,13 @@ Frontend (Next.js, IDKit, wagmi/viem)
 - **Frontend**: Next.js, TypeScript, wagmi/viem, IDKit, MiniKit, ensjs
 - **Infra**: World Chain mainnet, Ethereum mainnet, Vercel
 
+## Live Services
+
+| Service               | URL                               |
+| --------------------- | --------------------------------- |
+| World ID Backend      | https://humanens-backend.reza.dev |
+| ENS Ownership Gateway | https://humanens-gateway.reza.dev |
+
 ## Getting Started
 
 ```bash
