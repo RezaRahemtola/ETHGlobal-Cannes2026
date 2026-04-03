@@ -24,8 +24,10 @@ const PORT = Number(process.env.PORT) || 3001;
 const account = privateKeyToAccount(GATEWAY_SIGNER_KEY);
 const ethClient = createPublicClient({ chain: mainnet, transport: http(ETH_RPC) });
 
+const NAME_WRAPPER = "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401" as const;
 const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e" as const;
-const ENS_REGISTRY_ABI = [
+
+const OWNER_ABI = [
   {
     name: "owner",
     type: "function",
@@ -34,6 +36,41 @@ const ENS_REGISTRY_ABI = [
     outputs: [{ name: "", type: "address" }],
   },
 ] as const;
+
+const OWNER_OF_ABI = [
+  {
+    name: "ownerOf",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "id", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
+
+/// Returns the actual human owner of an ENS name.
+/// For wrapped names: NameWrapper.ownerOf(node)
+/// For unwrapped names: Registry.owner(node)
+async function getEnsNftOwner(node: Hex): Promise<Hex> {
+  const registryOwner = await ethClient.readContract({
+    address: ENS_REGISTRY,
+    abi: OWNER_ABI,
+    functionName: "owner",
+    args: [node],
+  }) as Hex;
+
+  // If the registry owner is the NameWrapper, the real owner is inside the wrapper
+  if (registryOwner.toLowerCase() === NAME_WRAPPER.toLowerCase()) {
+    const wrapperOwner = await ethClient.readContract({
+      address: NAME_WRAPPER,
+      abi: OWNER_OF_ABI,
+      functionName: "ownerOf",
+      args: [BigInt(node)],
+    }) as Hex;
+    return wrapperOwner;
+  }
+
+  return registryOwner;
+}
 
 // ─── Core logic ──────────────────────────────────────────────────────
 
@@ -44,17 +81,18 @@ async function handleRequest(callData: Hex) {
     callData
   );
 
+  // Fix #2: verify sourceNode matches the name
+  const expectedNode = namehash(ensName);
+  if (expectedNode !== sourceNode) {
+    throw new Error(`sourceNode mismatch: expected ${expectedNode} for ${ensName}, got ${sourceNode}`);
+  }
+
   console.log(`Checking ${ensName} text record "${key}"`);
 
   // Read L1 ENS state in parallel
   const [value, ensOwner] = await Promise.all([
     ethClient.getEnsText({ name: ensName, key }).then((v) => v ?? ""),
-    ethClient.readContract({
-      address: ENS_REGISTRY,
-      abi: ENS_REGISTRY_ABI,
-      functionName: "owner",
-      args: [sourceNode as Hex],
-    }),
+    getEnsNftOwner(sourceNode as Hex),
   ]);
 
   const timestamp = BigInt(Math.floor(Date.now() / 1000));

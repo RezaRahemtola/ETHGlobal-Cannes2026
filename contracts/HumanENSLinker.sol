@@ -75,7 +75,7 @@ contract HumanENSLinker {
             gatewayUrls,
             abi.encode(sourceNode, "humanens", sourceName),
             this.registerLinkCallback.selector,
-            abi.encode(msg.sender, label, sourceNode, attestationData)
+            abi.encode(msg.sender, label, sourceNode, sourceName, attestationData)
         );
     }
 
@@ -84,8 +84,8 @@ contract HumanENSLinker {
         bytes calldata response,
         bytes calldata extraData
     ) external {
-        (address registrant, string memory label, bytes32 sourceNode, bytes memory attestationData) =
-            abi.decode(extraData, (address, string, bytes32, bytes));
+        (address registrant, string memory label, bytes32 sourceNode, string memory sourceName, bytes memory attestationData) =
+            abi.decode(extraData, (address, string, bytes32, string, bytes));
 
         // Verify backend attestation (World ID)
         (bytes32 nullifierHash, uint256 attTimestamp, bytes memory attSig) =
@@ -101,6 +101,7 @@ contract HumanENSLinker {
         require(proofSourceNode == sourceNode, "SourceNode mismatch");
         string memory expected = string(abi.encodePacked(label, ".humanens.eth"));
         require(keccak256(bytes(value)) == keccak256(bytes(expected)), "Text record mismatch");
+        require(ensOwner == registrant, "Not ENS owner");
         bytes32 proofHash = keccak256(abi.encodePacked(proofSourceNode, value, ensOwner, proofTimestamp));
         require(_recover(proofHash, gatewaySig) == gatewaySigner, "Bad gateway sig");
 
@@ -122,7 +123,7 @@ contract HumanENSLinker {
         registry.setAddr(node, registrant);
         registry.setText(node, "world-id-verified", "true");
         registry.setText(node, "world-id-level", "orb");
-        registry.setText(node, "source-name", string(abi.encodePacked(label, ".eth")));
+        registry.setText(node, "source-name", sourceName);
 
         emit LinkRegistered(label, sourceNode, nullifierHash, registrant);
     }
@@ -135,12 +136,12 @@ contract HumanENSLinker {
         uint256 timestamp,
         bytes calldata sig
     ) external {
-        require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
-        bytes32 h = keccak256(abi.encodePacked(msg.sender, nullifierHash, nullifierToSourceNode[nullifierHash], label, timestamp));
-        require(_recover(h, sig) == backendSigner, "Bad backend sig");
-
         bytes32 sourceNode = nullifierToSourceNode[nullifierHash];
         require(sourceNode != bytes32(0), "No link");
+
+        require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+        bytes32 h = keccak256(abi.encodePacked(msg.sender, nullifierHash, sourceNode, label, timestamp));
+        require(_recover(h, sig) == backendSigner, "Bad backend sig");
 
         bytes32 baseNode = registry.baseNode();
         bytes32 node = registry.makeNode(baseNode, label);

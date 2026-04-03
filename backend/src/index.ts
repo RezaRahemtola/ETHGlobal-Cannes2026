@@ -3,6 +3,8 @@ import {
   type Hex,
   keccak256,
   encodePacked,
+  encodeAbiParameters,
+  parseAbiParameters,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -106,10 +108,17 @@ app.post("/api/verify-and-attest", async (req, res) => {
       timestamp
     );
 
+    // ABI-encode for the contract: abi.encode(nullifierHash, timestamp, signature)
+    const attestationData = encodeAbiParameters(
+      parseAbiParameters("bytes32, uint256, bytes"),
+      [nullifierHash as Hex, timestamp, signature]
+    );
+
     res.json({
       nullifierHash,
       timestamp: timestamp.toString(),
       signature,
+      attestationData,
     });
   } catch (err: any) {
     console.error("Verification error:", err.message);
