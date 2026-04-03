@@ -84,7 +84,7 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.07 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -115,6 +115,17 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* HumanENS brand */
+  --brand-mint: #6EE7B7;
+  --brand-blue: #3889FF;
+  --brand-purple: #8B5CF6;
+  --brand-gradient: linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%);
+  --bg-primary: #09090b;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-input: rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
@@ -126,5 +137,23 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glow-mint {
+    box-shadow: 0 0 12px rgba(110, 231, 183, 0.25);
+  }
+  .glow-blue {
+    box-shadow: 0 0 12px rgba(56, 137, 255, 0.25);
+  }
+  .glow-purple {
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
   }
 }
