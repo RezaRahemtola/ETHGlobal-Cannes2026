@@ -20,13 +20,23 @@ export default function LinkPage() {
     return (
       <main className="mx-auto max-w-lg px-4 py-10">
         <StepIndicator currentStep={1} />
-        <div className="mt-6 rounded-xl border border-[var(--brand-mint)]/15 bg-[var(--brand-mint)]/[0.03] p-6 text-center">
-          <h2 className="text-lg font-semibold text-[var(--brand-mint)]">Record Set</h2>
+        <div
+          className="mt-6 rounded-xl p-6 text-center animate-fade-in-up"
+          style={{
+            border: "1px solid rgba(110,231,183,0.15)",
+            background: "rgba(110,231,183,0.04)",
+            boxShadow: "0 0 32px rgba(110,231,183,0.06), inset 0 1px 0 rgba(110,231,183,0.08)",
+          }}
+        >
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(110,231,183,0.1)" }}>
+            <span className="text-lg">&#x2713;</span>
+          </div>
+          <h2 className="text-lg font-semibold" style={{ color: "#6EE7B7" }}>Record Set</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            <code className="text-[var(--brand-blue)]">humanens</code>{" = "}
-            <code className="text-[var(--brand-mint)]">{label}.humanens.eth</code>
+            <code style={{ color: "#3889FF" }}>humanens</code>{" = "}
+            <code style={{ color: "#6EE7B7" }}>{label}.humanens.eth</code>
           </p>
-          {hash && <p className="mt-2 break-all text-xs text-muted-foreground/60">Tx: {hash}</p>}
+          {hash && <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>Tx: {hash}</p>}
           <div className="mt-6 space-y-1">
             <p className="font-medium">Continue in World App</p>
             <p className="text-sm text-muted-foreground">
@@ -42,7 +52,7 @@ export default function LinkPage() {
     <main className="mx-auto max-w-lg space-y-4 px-4 py-10">
       <StepIndicator currentStep={1} />
 
-      <div className="pt-2">
+      <div className="pt-2 animate-fade-in-up">
         <h1 className="text-2xl font-bold tracking-tight">Link your ENS name</h1>
         <p className="text-sm text-muted-foreground">
           Set a text record on your .eth name to prove ownership
@@ -50,7 +60,7 @@ export default function LinkPage() {
       </div>
 
       {/* Wallet */}
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
+      <div className="glass-card animate-fade-in-up delay-100 rounded-xl p-4">
         <div className="flex items-center justify-between">
           <span className="text-[13px] text-muted-foreground">Wallet</span>
           <ConnectButton />
@@ -60,7 +70,7 @@ export default function LinkPage() {
       {/* ENS names */}
       <div
         className={cn(
-          "rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4",
+          "glass-card animate-fade-in-up delay-200 rounded-xl p-4",
           !isConnected && "pointer-events-none opacity-40",
         )}
       >
@@ -78,14 +88,26 @@ export default function LinkPage() {
                 key={name}
                 onClick={() => setSelectedName(name)}
                 className={cn(
-                  "w-full rounded-lg border p-3 text-left text-sm transition-colors",
+                  "w-full rounded-lg border p-3 text-left text-sm transition-all duration-200",
                   selectedName === name
-                    ? "border-[var(--brand-mint)]/20 bg-[var(--brand-mint)]/[0.04] text-foreground"
-                    : "border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)]",
+                    ? "scale-[1.01] text-foreground"
+                    : "hover:scale-[1.005]",
                 )}
+                style={
+                  selectedName === name
+                    ? {
+                        borderColor: "rgba(110,231,183,0.25)",
+                        background: "rgba(110,231,183,0.06)",
+                        boxShadow: "0 0 16px rgba(110,231,183,0.08), inset 0 1px 0 rgba(110,231,183,0.06)",
+                      }
+                    : {
+                        borderColor: "rgba(255,255,255,0.06)",
+                        background: "transparent",
+                      }
+                }
               >
                 {selectedName === name && (
-                  <span className="mr-2 text-[var(--brand-mint)]">●</span>
+                  <span style={{ color: "#6EE7B7" }} className="mr-2">&#x25CF;</span>
                 )}
                 {name}
               </button>
@@ -97,21 +119,27 @@ export default function LinkPage() {
       {/* Preview */}
       <div
         className={cn(
-          "rounded-xl border border-[var(--brand-mint)]/[0.08] bg-[var(--brand-mint)]/[0.03] p-4",
+          "animate-fade-in-up delay-300 rounded-xl p-4",
           !selectedName && "pointer-events-none opacity-40",
         )}
+        style={{
+          border: "1px solid rgba(110,231,183,0.1)",
+          background: "rgba(110,231,183,0.03)",
+          boxShadow: "inset 0 1px 0 rgba(110,231,183,0.05)",
+        }}
       >
         <p className="mb-2 text-xs text-muted-foreground">Will set text record</p>
         <p className="text-[15px]">
-          <code className="text-[var(--brand-blue)]">humanens</code>
-          <span className="text-muted-foreground/40"> = </span>
-          <code className="text-[var(--brand-mint)]">{label || "..."}.humanens.eth</code>
+          <code style={{ color: "#3889FF" }}>humanens</code>
+          <span style={{ color: "rgba(255,255,255,0.2)" }}> = </span>
+          <code style={{ color: "#6EE7B7" }}>{label || "..."}.humanens.eth</code>
         </p>
       </div>
 
       {/* CTA */}
       <button
-        className="w-full rounded-full bg-foreground py-3 text-[15px] font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-full py-3 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-lg"
+        style={{ backgroundColor: "#fafafa", color: "#09090b" }}
         disabled={!selectedName || isPending || isConfirming}
         onClick={() => selectedName && setTextRecord(selectedName)}
       >

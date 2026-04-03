@@ -150,7 +150,9 @@ function AgentCard({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 space-y-2">
+    <div
+      className="glass-card glass-card-hover rounded-xl px-4 py-3 space-y-2"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-white truncate">
@@ -163,7 +165,15 @@ function AgentCard({
             {agent.agentAddress}
           </p>
         </div>
-        <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--brand-mint)]/[0.08] px-2.5 py-0.5 text-xs font-medium text-[var(--brand-mint)]">
+        <span
+          className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+          style={{
+            background: "rgba(110,231,183,0.1)",
+            color: "#6EE7B7",
+            border: "1px solid rgba(110,231,183,0.2)",
+            boxShadow: "0 0 8px rgba(110,231,183,0.1)",
+          }}
+        >
           Active
         </span>
       </div>
@@ -177,7 +187,8 @@ function AgentCard({
         {error ? (
           <button
             onClick={reset}
-            className="flex-1 h-8 rounded-full border border-[var(--border-subtle)] text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="flex-1 h-8 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-all hover:scale-[1.01]"
+            style={{ border: "1px solid rgba(255,255,255,0.06)" }}
           >
             Retry
           </button>
@@ -186,9 +197,9 @@ function AgentCard({
             onClick={handleRevoke}
             disabled={isBusy}
             className={cn(
-              "flex-1 h-8 rounded-full text-xs font-medium transition-colors",
-              "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20",
-              isBusy && "opacity-50 cursor-not-allowed",
+              "flex-1 h-8 rounded-full text-xs font-medium transition-all",
+              "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:scale-[1.01]",
+              isBusy && "opacity-50 cursor-not-allowed hover:scale-100",
             )}
           >
             {isBusy ? "Processing..." : "Revoke"}
@@ -265,7 +276,7 @@ function ManageFlow() {
 
   return (
     <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
-      <div>
+      <div className="animate-fade-in-up">
         <h1 className="text-2xl font-bold text-white">Manage Agents</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Create and revoke agent subnames for your HumanENS identity
@@ -273,8 +284,8 @@ function ManageFlow() {
       </div>
 
       {/* Parent label lookup */}
-      <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4 space-y-3">
-        <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+      <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-3">
+        <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
           Your HumanENS label
         </label>
         <div className="flex items-center gap-2">
@@ -282,7 +293,19 @@ function ManageFlow() {
             placeholder="alice"
             value={parentLabel}
             onChange={(e) => setParentLabel(e.target.value.toLowerCase())}
-            className="flex-1 h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40"
+            className="flex-1 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all"
+            style={{
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.05)",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "rgba(110,231,183,0.3)";
+              e.currentTarget.style.boxShadow = "0 0 0 2px rgba(110,231,183,0.08)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           />
           <span className="text-sm text-muted-foreground shrink-0">.humanens.eth</span>
         </div>
@@ -290,11 +313,12 @@ function ManageFlow() {
           onClick={handleLookup}
           disabled={!parentLabel.trim()}
           className={cn(
-            "w-full h-10 rounded-full border border-[var(--border-subtle)] text-sm font-medium text-muted-foreground transition-colors",
+            "w-full h-10 rounded-full text-sm font-medium text-muted-foreground transition-all",
             parentLabel.trim()
-              ? "hover:text-foreground hover:border-[var(--brand-mint)]/40"
+              ? "hover:text-foreground hover:scale-[1.005]"
               : "opacity-40 cursor-not-allowed",
           )}
+          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
         >
           Load Agents
         </button>
@@ -303,7 +327,7 @@ function ManageFlow() {
       {/* Agent list */}
       {submittedLabel && (
         <>
-          <div>
+          <div className="animate-fade-in">
             <h2 className="text-base font-semibold text-white mb-3">
               Active Agents
               {!isLoading && (
@@ -316,7 +340,7 @@ function ManageFlow() {
             {isLoading ? (
               <p className="text-sm text-muted-foreground animate-pulse">Loading agents...</p>
             ) : agents.length === 0 ? (
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4">
+              <div className="glass-card rounded-xl px-4 py-4">
                 <p className="text-sm text-muted-foreground text-center">
                   No active agents for {submittedLabel}.humanens.eth
                 </p>
@@ -334,15 +358,15 @@ function ManageFlow() {
             )}
           </div>
 
-          <div className="h-px bg-[var(--border-subtle)]" />
+          <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
 
           {/* Create new agent */}
-          <div>
+          <div className="animate-fade-in">
             <h2 className="text-base font-semibold text-white mb-3">Add New Agent</h2>
 
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-4 space-y-4">
+            <div className="glass-card rounded-xl px-4 py-4 space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+                <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
                   Agent label
                 </label>
                 <div className="flex items-center gap-2">
@@ -351,7 +375,19 @@ function ManageFlow() {
                     value={agentLabel}
                     onChange={(e) => setAgentLabel(e.target.value.toLowerCase())}
                     disabled={isCreating}
-                    className="flex-1 h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40 disabled:opacity-50"
+                    className="flex-1 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all disabled:opacity-50"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.05)",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(110,231,183,0.3)";
+                      e.currentTarget.style.boxShadow = "0 0 0 2px rgba(110,231,183,0.08)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                   />
                   <span className="text-xs text-muted-foreground shrink-0">
                     .{submittedLabel}.humanens.eth
@@ -360,7 +396,7 @@ function ManageFlow() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[11px] uppercase tracking-[0.5px] text-muted-foreground/60">
+                <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
                   Agent wallet address
                 </label>
                 <input
@@ -368,7 +404,19 @@ function ManageFlow() {
                   value={agentAddress}
                   onChange={(e) => setAgentAddress(e.target.value)}
                   disabled={isCreating}
-                  className="w-full h-10 rounded-lg border border-[var(--border-input)] bg-white/[0.05] px-3 font-mono text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-[var(--brand-mint)]/40 disabled:opacity-50"
+                  className="w-full h-10 rounded-lg px-3 font-mono text-sm text-white outline-none transition-all disabled:opacity-50"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.05)",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(110,231,183,0.3)";
+                    e.currentTarget.style.boxShadow = "0 0 0 2px rgba(110,231,183,0.08)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 />
                 {agentAddress && !isAddressValid && (
                   <p className="text-xs text-destructive mt-1">Invalid address</p>
@@ -382,7 +430,7 @@ function ManageFlow() {
               )}
 
               {createStatus === "success" && (
-                <p className="text-sm text-[var(--brand-mint)] text-center">
+                <p className="text-sm text-center" style={{ color: "#6EE7B7" }}>
                   Agent created successfully!
                 </p>
               )}
@@ -395,7 +443,8 @@ function ManageFlow() {
                 {createError && (
                   <button
                     onClick={createReset}
-                    className="flex-1 h-10 rounded-full border border-[var(--border-subtle)] text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex-1 h-10 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-all hover:scale-[1.005]"
+                    style={{ border: "1px solid rgba(255,255,255,0.06)" }}
                   >
                     Reset
                   </button>
@@ -404,10 +453,12 @@ function ManageFlow() {
                   onClick={handleCreate}
                   disabled={!canCreate}
                   className={cn(
-                    "flex-1 h-10 rounded-full text-sm font-semibold text-white transition-opacity",
-                    "bg-gradient-to-r from-[var(--brand-mint)] to-[var(--brand-blue)]",
-                    !canCreate && "opacity-40 cursor-not-allowed",
+                    "btn-glow flex-1 h-10 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01]",
+                    !canCreate && "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-lg",
                   )}
+                  style={{
+                    background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
+                  }}
                 >
                   {isCreating ? "Processing..." : "Create Agent (Gas Free)"}
                 </button>

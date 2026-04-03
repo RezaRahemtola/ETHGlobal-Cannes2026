@@ -1,15 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const stepColors = [
-  "bg-[var(--brand-mint)]",
-  "bg-[var(--brand-blue)]",
-  "bg-[var(--brand-purple)]",
-];
-
-const stepDoneColors = [
-  "bg-[var(--brand-mint)]/30",
-  "bg-[var(--brand-blue)]/30",
-  "bg-[var(--brand-purple)]/30",
+  { bg: "#6EE7B7" },
+  { bg: "#3889FF" },
+  { bg: "#8B5CF6" },
 ];
 
 interface StepIndicatorProps {
@@ -28,13 +22,19 @@ export function StepIndicator({ currentStep, totalSteps = 3 }: StepIndicatorProp
           <div
             key={i}
             className={cn(
-              "h-1 w-7 rounded-full transition-colors",
-              isActive
-                ? stepColors[i]
-                : isDone
-                  ? stepDoneColors[i]
-                  : "bg-white/[0.08]",
+              "h-1 w-7 rounded-full transition-all duration-300",
+              !isActive && !isDone && "bg-white/[0.08]",
             )}
+            style={
+              isActive
+                ? {
+                    backgroundColor: stepColors[i].bg,
+                    boxShadow: `0 0 8px ${stepColors[i].bg}40`,
+                  }
+                : isDone
+                  ? { backgroundColor: stepColors[i].bg, opacity: 0.3 }
+                  : undefined
+            }
           />
         );
       })}
