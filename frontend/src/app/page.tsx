@@ -21,8 +21,8 @@ export default function Home() {
           <span className="gradient-text">known by your name</span>
         </h1>
         <p className="animate-fade-in-up delay-100 max-w-md text-base text-muted-foreground leading-relaxed">
-          World ID biometrics meet ENS naming. Prove you&apos;re human on-chain, protect
-          your name, give your AI agents identity.
+          World ID biometrics meet ENS naming. Prove you&apos;re human on-chain, protect your name,
+          give your AI agents identity.
         </p>
         <div className="animate-fade-in-up delay-200 flex gap-3">
           <Link
@@ -44,7 +44,10 @@ export default function Home() {
 
       {/* How it works */}
       <section id="how-it-works" className="mx-auto max-w-2xl px-4 pt-8 pb-8">
-        <h2 className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <h2
+          className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
           How it works
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -87,9 +90,7 @@ export default function Home() {
                 }}
               />
               <h3 className="text-sm font-medium">{title}</h3>
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                {desc}
-              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{desc}</p>
               <span
                 className="mt-3 inline-block text-[10px] uppercase tracking-[1px]"
                 style={{ color: "rgba(255,255,255,0.3)" }}
@@ -103,7 +104,10 @@ export default function Home() {
 
       {/* Verifier */}
       <section className="mx-auto max-w-md px-4 pt-8 pb-16">
-        <h2 className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <h2
+          className="animate-fade-in mb-4 text-center text-[11px] font-medium uppercase tracking-[2px]"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
           Verify a name
         </h2>
         <div

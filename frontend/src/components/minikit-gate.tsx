@@ -33,7 +33,8 @@ function MiniKitGateScreen() {
       <div
         className="animate-fade-in-up delay-200 relative mt-8 rounded-2xl bg-white p-3"
         style={{
-          boxShadow: "0 0 40px rgba(110,231,183,0.1), 0 0 80px rgba(56,137,255,0.06), 0 8px 32px rgba(0,0,0,0.3)",
+          boxShadow:
+            "0 0 40px rgba(110,231,183,0.1), 0 0 80px rgba(56,137,255,0.06), 0 8px 32px rgba(0,0,0,0.3)",
         }}
       >
         <QRCodeSVG
@@ -60,9 +61,14 @@ function MiniKitGateScreen() {
         </a>
       )}
 
-      <p className="animate-fade-in delay-400 text-xs" style={{ color: "rgba(255,255,255,0.3)", marginTop: "48px" }}>
+      <p
+        className="animate-fade-in delay-400 text-xs"
+        style={{ color: "rgba(255,255,255,0.3)", marginTop: "48px" }}
+      >
         or search{" "}
-        <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>&quot;HumanENS&quot;</span>{" "}
+        <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>
+          &quot;HumanENS&quot;
+        </span>{" "}
         in World App
       </p>
     </div>

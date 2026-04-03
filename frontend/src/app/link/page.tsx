@@ -35,19 +35,30 @@ export default function LinkPage() {
             boxShadow: "0 0 32px rgba(110,231,183,0.06), inset 0 1px 0 rgba(110,231,183,0.08)",
           }}
         >
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full" style={{ background: "rgba(110,231,183,0.1)" }}>
+          <div
+            className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
+            style={{ background: "rgba(110,231,183,0.1)" }}
+          >
             <span className="text-lg">&#x2713;</span>
           </div>
-          <h2 className="text-lg font-semibold" style={{ color: "#6EE7B7" }}>Record Set</h2>
+          <h2 className="text-lg font-semibold" style={{ color: "#6EE7B7" }}>
+            Record Set
+          </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            <code style={{ color: "#3889FF" }}>humanens</code>{" = "}
+            <code style={{ color: "#3889FF" }}>humanens</code>
+            {" = "}
             <code style={{ color: "#6EE7B7" }}>{label}.humanens.eth</code>
           </p>
-          {hash && <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>Tx: {hash}</p>}
+          {hash && (
+            <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Tx: {hash}
+            </p>
+          )}
           <div className="mt-6 space-y-1">
             <p className="font-medium">Continue in World App</p>
             <p className="text-sm text-muted-foreground">
-              Open the HumanENS Mini App in World App to verify with World ID and claim your subname.
+              Open the HumanENS Mini App in World App to verify with World ID and claim your
+              subname.
             </p>
           </div>
         </div>

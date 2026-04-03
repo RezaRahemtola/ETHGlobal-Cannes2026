@@ -47,7 +47,9 @@ export function Verifier() {
           {isLoading ? "Checking..." : "Check"}
         </button>
       </form>
-      <p className="text-xs text-muted-foreground">Enter any .eth name to check if it&apos;s verified</p>
+      <p className="text-xs text-muted-foreground">
+        Enter any .eth name to check if it&apos;s verified
+      </p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -61,7 +63,9 @@ export function Verifier() {
           }}
         >
           <div className="flex items-center justify-between">
-            <span className="font-mono text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>{result.name}</span>
+            <span className="font-mono text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {result.name}
+            </span>
             {result.isVerified ? (
               <span
                 className="verified-glow rounded-full px-3 py-1 text-[11px] font-semibold"

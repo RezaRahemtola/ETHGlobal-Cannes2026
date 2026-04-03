@@ -26,17 +26,14 @@ export function Nav() {
       <nav className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
           <IrisLogo size={22} />
-          <span className="text-[17px] font-semibold tracking-tight">
-            HumanENS
-          </span>
+          <span className="text-[17px] font-semibold tracking-tight">HumanENS</span>
         </Link>
         <div className="flex gap-6 text-[13px]">
           {links.map(({ href, label }) => {
             const isActive =
               href === "/"
                 ? pathname === "/"
-                : pathname.startsWith(href) &&
-                  (href !== "/app" || pathname === "/app");
+                : pathname.startsWith(href) && (href !== "/app" || pathname === "/app");
             return (
               <Link
                 key={href}

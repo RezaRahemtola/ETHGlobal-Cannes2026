@@ -54,8 +54,10 @@ function RegisterFlow() {
           className="mt-6 rounded-xl p-6 text-center animate-fade-in-up"
           style={{
             border: "1px solid rgba(110,231,183,0.2)",
-            background: "linear-gradient(135deg, rgba(110,231,183,0.06) 0%, rgba(56,137,255,0.04) 50%, rgba(139,92,246,0.03) 100%)",
-            boxShadow: "0 0 40px rgba(110,231,183,0.08), 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)",
+            background:
+              "linear-gradient(135deg, rgba(110,231,183,0.06) 0%, rgba(56,137,255,0.04) 50%, rgba(139,92,246,0.03) 100%)",
+            boxShadow:
+              "0 0 40px rgba(110,231,183,0.08), 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         >
           <div
@@ -65,7 +67,9 @@ function RegisterFlow() {
               boxShadow: "0 0 24px rgba(110,231,183,0.2)",
             }}
           >
-            <span className="text-xl" style={{ color: "#6EE7B7" }}>&#x2713;</span>
+            <span className="text-xl" style={{ color: "#6EE7B7" }}>
+              &#x2713;
+            </span>
           </div>
           <h2 className="text-lg font-semibold" style={{ color: "#6EE7B7" }}>
             {label}.humanens.eth is live
@@ -74,7 +78,9 @@ function RegisterFlow() {
             Your verified HumanENS subname has been registered.
           </p>
           {txHash && (
-            <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>Tx: {txHash}</p>
+            <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Tx: {txHash}
+            </p>
           )}
           <Link
             href="/app/manage"
@@ -94,14 +100,15 @@ function RegisterFlow() {
 
       <div className="pt-2 animate-fade-in-up">
         <h1 className="text-[22px] font-bold tracking-tight">Register subname</h1>
-        <p className="text-[13px] text-muted-foreground">
-          Verify &amp; claim your .humanens.eth
-        </p>
+        <p className="text-[13px] text-muted-foreground">Verify &amp; claim your .humanens.eth</p>
       </div>
 
       {/* Label input */}
       <div className="glass-card animate-fade-in-up delay-100 rounded-xl p-4">
-        <p className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p
+          className="mb-2 text-[11px] uppercase tracking-[0.5px]"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
           Your label
         </p>
         <div className="flex items-center gap-2">
@@ -125,7 +132,9 @@ function RegisterFlow() {
               e.currentTarget.style.boxShadow = "none";
             }}
           />
-          <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>.humanens.eth</span>
+          <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+            .humanens.eth
+          </span>
         </div>
       </div>
 
@@ -139,7 +148,9 @@ function RegisterFlow() {
             boxShadow: "inset 0 1px 0 rgba(56,137,255,0.06)",
           }}
         >
-          <p className="mb-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Source name</p>
+          <p className="mb-1 text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Source name
+          </p>
           <p className="text-sm">
             <span className="text-muted-foreground">{label}.eth</span>
             <span style={{ color: "rgba(255,255,255,0.15)" }}> &rarr; </span>

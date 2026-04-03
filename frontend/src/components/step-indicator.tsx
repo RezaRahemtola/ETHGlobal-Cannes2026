@@ -1,10 +1,6 @@
 import { cn } from "@/lib/utils";
 
-const stepColors = [
-  { bg: "#6EE7B7" },
-  { bg: "#3889FF" },
-  { bg: "#8B5CF6" },
-];
+const stepColors = [{ bg: "#6EE7B7" }, { bg: "#3889FF" }, { bg: "#8B5CF6" }];
 
 interface StepIndicatorProps {
   currentStep: number;

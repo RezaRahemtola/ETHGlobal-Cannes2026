@@ -150,9 +150,7 @@ function AgentCard({
   }
 
   return (
-    <div
-      className="glass-card glass-card-hover rounded-xl px-4 py-3 space-y-2"
-    >
+    <div className="glass-card glass-card-hover rounded-xl px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-white truncate">
@@ -285,7 +283,10 @@ function ManageFlow() {
 
       {/* Parent label lookup */}
       <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-3">
-        <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <label
+          className="block text-[11px] uppercase tracking-[0.5px]"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
           Your HumanENS label
         </label>
         <div className="flex items-center gap-2">
@@ -366,7 +367,10 @@ function ManageFlow() {
 
             <div className="glass-card rounded-xl px-4 py-4 space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <label
+                  className="block text-[11px] uppercase tracking-[0.5px]"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
+                >
                   Agent label
                 </label>
                 <div className="flex items-center gap-2">
@@ -396,7 +400,10 @@ function ManageFlow() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[11px] uppercase tracking-[0.5px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <label
+                  className="block text-[11px] uppercase tracking-[0.5px]"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
+                >
                   Agent wallet address
                 </label>
                 <input
@@ -435,9 +442,7 @@ function ManageFlow() {
                 </p>
               )}
 
-              {createError && (
-                <p className="text-sm text-destructive text-center">{createError}</p>
-              )}
+              {createError && <p className="text-sm text-destructive text-center">{createError}</p>}
 
               <div className="flex gap-2">
                 {createError && (

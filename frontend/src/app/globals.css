@@ -117,10 +117,10 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   /* HumanENS brand */
-  --brand-mint: #6EE7B7;
-  --brand-blue: #3889FF;
-  --brand-purple: #8B5CF6;
-  --brand-gradient: linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%);
+  --brand-mint: #6ee7b7;
+  --brand-blue: #3889ff;
+  --brand-purple: #8b5cf6;
+  --brand-gradient: linear-gradient(135deg, #6ee7b7 0%, #3889ff 50%, #8b5cf6 100%);
   --bg-primary: #09090b;
   --bg-card: rgba(255, 255, 255, 0.03);
   --bg-card-hover: rgba(255, 255, 255, 0.05);
@@ -173,12 +173,17 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes subtle-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 0 8px var(--pulse-color, rgba(110, 231, 183, 0.3));
   }
@@ -189,14 +194,24 @@
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @layer utilities {
@@ -228,11 +243,21 @@
     background-size: 200% 200%;
     animation: gradient-shift 6s ease infinite;
   }
-  .delay-100 { animation-delay: 100ms; }
-  .delay-200 { animation-delay: 200ms; }
-  .delay-300 { animation-delay: 300ms; }
-  .delay-400 { animation-delay: 400ms; }
-  .delay-500 { animation-delay: 500ms; }
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-400 {
+    animation-delay: 400ms;
+  }
+  .delay-500 {
+    animation-delay: 500ms;
+  }
 
   /* Glass card */
   .glass-card {
@@ -262,7 +287,12 @@
   .gradient-border {
     position: relative;
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(110, 231, 183, 0.15), rgba(56, 137, 255, 0.15), rgba(139, 92, 246, 0.15));
+    background: linear-gradient(
+      135deg,
+      rgba(110, 231, 183, 0.15),
+      rgba(56, 137, 255, 0.15),
+      rgba(139, 92, 246, 0.15)
+    );
     padding: 1px;
   }
   .gradient-border > * {
@@ -281,7 +311,12 @@
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(110, 231, 183, 0.3), rgba(56, 137, 255, 0.3), rgba(139, 92, 246, 0.3));
+    background: linear-gradient(
+      135deg,
+      rgba(110, 231, 183, 0.3),
+      rgba(56, 137, 255, 0.3),
+      rgba(139, 92, 246, 0.3)
+    );
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: -1;
@@ -293,6 +328,8 @@
 
   /* Verified badge glow */
   .verified-glow {
-    box-shadow: 0 0 12px rgba(110, 231, 183, 0.2), 0 0 4px rgba(110, 231, 183, 0.1);
+    box-shadow:
+      0 0 12px rgba(110, 231, 183, 0.2),
+      0 0 4px rgba(110, 231, 183, 0.1);
   }
 }
