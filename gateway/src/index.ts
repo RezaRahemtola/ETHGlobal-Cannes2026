@@ -51,21 +51,21 @@ const OWNER_OF_ABI = [
 /// For wrapped names: NameWrapper.ownerOf(node)
 /// For unwrapped names: Registry.owner(node)
 async function getEnsNftOwner(node: Hex): Promise<Hex> {
-  const registryOwner = await ethClient.readContract({
+  const registryOwner = (await ethClient.readContract({
     address: ENS_REGISTRY,
     abi: OWNER_ABI,
     functionName: "owner",
     args: [node],
-  }) as Hex;
+  })) as Hex;
 
   // If the registry owner is the NameWrapper, the real owner is inside the wrapper
   if (registryOwner.toLowerCase() === NAME_WRAPPER.toLowerCase()) {
-    const wrapperOwner = await ethClient.readContract({
+    const wrapperOwner = (await ethClient.readContract({
       address: NAME_WRAPPER,
       abi: OWNER_OF_ABI,
       functionName: "ownerOf",
       args: [BigInt(node)],
-    }) as Hex;
+    })) as Hex;
     return wrapperOwner;
   }
 
@@ -78,13 +78,15 @@ async function handleRequest(callData: Hex) {
   // Decode: abi.encode(bytes32 sourceNode, string key, string name)
   const [sourceNode, key, ensName] = decodeAbiParameters(
     parseAbiParameters("bytes32, string, string"),
-    callData
+    callData,
   );
 
   // Fix #2: verify sourceNode matches the name
   const expectedNode = namehash(ensName);
   if (expectedNode !== sourceNode) {
-    throw new Error(`sourceNode mismatch: expected ${expectedNode} for ${ensName}, got ${sourceNode}`);
+    throw new Error(
+      `sourceNode mismatch: expected ${expectedNode} for ${ensName}, got ${sourceNode}`,
+    );
   }
 
   console.log(`Checking ${ensName} text record "${key}"`);
@@ -101,16 +103,19 @@ async function handleRequest(callData: Hex) {
   const hash = keccak256(
     encodePacked(
       ["bytes32", "string", "address", "uint256"],
-      [sourceNode as Hex, value, ensOwner as Hex, timestamp]
-    )
+      [sourceNode as Hex, value, ensOwner as Hex, timestamp],
+    ),
   );
   const signature = await account.signMessage({ message: { raw: hash } });
 
   // Encode response: abi.encode(bytes32, string, address, uint256, bytes)
-  return encodeAbiParameters(
-    parseAbiParameters("bytes32, string, address, uint256, bytes"),
-    [sourceNode as Hex, value, ensOwner as Hex, timestamp, signature]
-  );
+  return encodeAbiParameters(parseAbiParameters("bytes32, string, address, uint256, bytes"), [
+    sourceNode as Hex,
+    value,
+    ensOwner as Hex,
+    timestamp,
+    signature,
+  ]);
 }
 
 // ─── Server ──────────────────────────────────────────────────────────
@@ -122,7 +127,10 @@ app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (_req.method === "OPTIONS") { res.sendStatus(200); return; }
+  if (_req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
   next();
 });
 

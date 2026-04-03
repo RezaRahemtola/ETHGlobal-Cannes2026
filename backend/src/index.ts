@@ -1,11 +1,5 @@
 import express from "express";
-import {
-  type Hex,
-  keccak256,
-  encodePacked,
-  encodeAbiParameters,
-  parseAbiParameters,
-} from "viem";
+import { type Hex, keccak256, encodePacked, encodeAbiParameters, parseAbiParameters } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 // ─── Config ──────────────────────────────────────────────────────────
@@ -22,14 +16,11 @@ const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 // ─── World ID cloud verification ────────────────────────────────────
 
 async function verifyWorldId(idkitResult: any): Promise<{ nullifierHash: string }> {
-  const res = await fetch(
-    `https://developer.world.org/api/v4/verify/${WORLD_ID_RP_ID}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(idkitResult),
-    }
-  );
+  const res = await fetch(`https://developer.world.org/api/v4/verify/${WORLD_ID_RP_ID}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(idkitResult),
+  });
 
   const payload = await res.json();
   if (!res.ok || !payload.success) {
@@ -46,14 +37,14 @@ async function signAttestation(
   nullifierHash: Hex,
   sourceNode: Hex,
   label: string,
-  timestamp: bigint
+  timestamp: bigint,
 ): Promise<Hex> {
   // Must match contract: keccak256(abi.encodePacked(registrant, nullifierHash, sourceNode, label, timestamp))
   const hash = keccak256(
     encodePacked(
       ["address", "bytes32", "bytes32", "string", "uint256"],
-      [registrant, nullifierHash, sourceNode, label, timestamp]
-    )
+      [registrant, nullifierHash, sourceNode, label, timestamp],
+    ),
   );
   return account.signMessage({ message: { raw: hash } });
 }
@@ -67,7 +58,10 @@ app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (_req.method === "OPTIONS") { res.sendStatus(200); return; }
+  if (_req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
   next();
 });
 
@@ -91,7 +85,9 @@ app.post("/api/verify-and-attest", async (req, res) => {
     const { idkitResult, registrant, sourceNode, label } = req.body;
 
     if (!idkitResult || !registrant || !sourceNode || !label) {
-      return res.status(400).json({ error: "Missing fields: idkitResult, registrant, sourceNode, label" });
+      return res
+        .status(400)
+        .json({ error: "Missing fields: idkitResult, registrant, sourceNode, label" });
     }
 
     // Step 1: Verify World ID proof via cloud API
@@ -105,14 +101,15 @@ app.post("/api/verify-and-attest", async (req, res) => {
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
-      timestamp
+      timestamp,
     );
 
     // ABI-encode for the contract: abi.encode(nullifierHash, timestamp, signature)
-    const attestationData = encodeAbiParameters(
-      parseAbiParameters("bytes32, uint256, bytes"),
-      [nullifierHash as Hex, timestamp, signature]
-    );
+    const attestationData = encodeAbiParameters(parseAbiParameters("bytes32, uint256, bytes"), [
+      nullifierHash as Hex,
+      timestamp,
+      signature,
+    ]);
 
     res.json({
       nullifierHash,
@@ -147,7 +144,7 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
-      timestamp
+      timestamp,
     );
 
     res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
@@ -175,8 +172,15 @@ app.post("/api/verify-and-sign-agent", async (req, res) => {
     const hash = keccak256(
       encodePacked(
         ["address", "bytes32", "string", "string", "address", "uint256"],
-        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, agentAddress as Hex, timestamp]
-      )
+        [
+          registrant as Hex,
+          nullifierHash as Hex,
+          parentLabel,
+          agentLabel,
+          agentAddress as Hex,
+          timestamp,
+        ],
+      ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });
 
@@ -205,8 +209,8 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
     const hash = keccak256(
       encodePacked(
         ["address", "bytes32", "string", "string", "uint256"],
-        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp]
-      )
+        [registrant as Hex, nullifierHash as Hex, parentLabel, agentLabel, timestamp],
+      ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });
 
