@@ -50,7 +50,7 @@ function MiniKitGateScreen() {
       </div>
 
       {/* "Open in World App" — mobile only */}
-      {deepLink && (
+      {WORLD_APP_ID && (
         <a
           href={deepLink}
           className="animate-fade-in-up delay-300 mt-8 items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl hidden max-[639px]:inline-flex"
