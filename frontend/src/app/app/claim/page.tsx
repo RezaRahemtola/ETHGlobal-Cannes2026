@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
 import { useRegisterLink } from "@/hooks/use-register-link";
 import { useIdkitVerify } from "@/hooks/use-idkit-verify";
+import { getEnsTextRecord } from "@/lib/ens";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -13,6 +14,9 @@ function RegisterFlow() {
   const searchParams = useSearchParams();
   const [label, setLabel] = useState(searchParams.get("label") ?? "");
   const { register, status, error, txHash } = useRegisterLink();
+  const [recordCheck, setRecordCheck] = useState<"idle" | "loading" | "valid" | "missing">("idle");
+  const [recordValue, setRecordValue] = useState<string | null>(null);
+  const [nullifierError, setNullifierError] = useState<string | null>(null);
   const {
     rpContext,
     isLoadingRp,
@@ -23,6 +27,25 @@ function RegisterFlow() {
   } = useIdkitVerify();
 
   const [idkitOpen, setIdkitOpen] = useState(false);
+
+  // Check if {label}.eth has a humanens text record
+  useEffect(() => {
+    if (!label.trim()) {
+      setRecordCheck("idle");
+      return;
+    }
+    setRecordCheck("loading");
+    const name = `${label.trim()}.eth`;
+    getEnsTextRecord(name, "humanens")
+      .then((val) => {
+        setRecordValue(val ?? null);
+        setRecordCheck(val ? "valid" : "missing");
+      })
+      .catch(() => {
+        setRecordValue(null);
+        setRecordCheck("missing");
+      });
+  }, [label]);
 
   const statusMessages: Record<string, string> = {
     idle: "",
@@ -132,13 +155,14 @@ function RegisterFlow() {
         </div>
       </div>
 
-      {/* Source name info */}
+      {/* Source name info + record check */}
       {label && (
         <div
           className="rounded-xl p-4 animate-fade-in"
           style={{
-            border: "1px solid rgba(56,137,255,0.1)",
-            background: "rgba(56,137,255,0.04)",
+            border: `1px solid ${recordCheck === "missing" ? "rgba(239,68,68,0.2)" : "rgba(56,137,255,0.1)"}`,
+            background:
+              recordCheck === "missing" ? "rgba(239,68,68,0.04)" : "rgba(56,137,255,0.04)",
             boxShadow: "inset 0 1px 0 rgba(56,137,255,0.06)",
           }}
         >
@@ -150,6 +174,22 @@ function RegisterFlow() {
             <span style={{ color: "rgba(255,255,255,0.15)" }}> &rarr; </span>
             <span style={{ color: "#6EE7B7" }}>{label}.humanens.eth</span>
           </p>
+          {recordCheck === "loading" && (
+            <p className="mt-2 text-xs text-muted-foreground animate-pulse">
+              Checking text record...
+            </p>
+          )}
+          {recordCheck === "missing" && (
+            <p className="mt-2 text-xs text-destructive">
+              No <code>humanens</code> text record found on {label}.eth. Set it first on the setup
+              page.
+            </p>
+          )}
+          {recordCheck === "valid" && (
+            <p className="mt-2 text-xs" style={{ color: "#6EE7B7" }}>
+              &#x2713; Text record found
+            </p>
+          )}
         </div>
       )}
 
@@ -171,7 +211,19 @@ function RegisterFlow() {
           allow_legacy_proofs={true}
           preset={orbLegacy()}
           onSuccess={(result) => {
-            if (label) register({ label, idkitResult: result });
+            if (!label) return;
+            // Check nullifier matches the text record before proceeding
+            const res = result as { responses?: { nullifier?: string }[] };
+            const nullifier = res.responses?.[0]?.nullifier;
+            if (recordValue && nullifier && recordValue !== nullifier) {
+              setNullifierError(
+                "This ENS name's text record doesn't match your World ID. Did you set the record with a different World ID?",
+              );
+              setIdkitOpen(false);
+              return;
+            }
+            setNullifierError(null);
+            register({ label, idkitResult: result });
           }}
           onError={(code) => console.error("IDKit error", code)}
         />
@@ -183,16 +235,25 @@ function RegisterFlow() {
         style={{
           background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
         }}
-        disabled={!label || (status !== "idle" && status !== "error") || isLoadingRp}
+        disabled={
+          !label ||
+          recordCheck !== "valid" ||
+          (status !== "idle" && status !== "error") ||
+          isLoadingRp
+        }
         onClick={handleStartVerify}
       >
         {status === "idle" || status === "error"
-          ? (isLoadingRp ? "Loading..." : "Verify & Register")
+          ? isLoadingRp
+            ? "Loading..."
+            : "Verify & Register"
           : "Processing..."}
       </button>
 
-      {(error || idkitError) && (
-        <p className="text-center text-sm text-destructive">{error || idkitError}</p>
+      {(error || idkitError || nullifierError) && (
+        <p className="text-center text-sm text-destructive">
+          {nullifierError || error || idkitError}
+        </p>
       )}
     </main>
   );
