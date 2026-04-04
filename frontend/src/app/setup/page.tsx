@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAccount } from "wagmi";
 import { getEnsTextRecord } from "@/lib/ens";
