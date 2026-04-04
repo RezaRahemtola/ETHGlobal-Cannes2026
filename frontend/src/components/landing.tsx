@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Verifier } from "@/components/verifier";
 import Link from "next/link";
 
@@ -117,7 +118,9 @@ export function Landing({ ctaHref }: { ctaHref: string }) {
             background: "rgba(255,255,255,0.03)",
           }}
         >
-          <Verifier />
+          <Suspense>
+            <Verifier />
+          </Suspense>
         </div>
       </section>
     </main>
