@@ -62,6 +62,7 @@ export default function LinkPage() {
   }, [selectedName]);
 
   const hasVerified = !!nullifier;
+  const recordAlreadyMatches = hasVerified && !!existingRecord && existingRecord === nullifier;
 
   async function handleStartVerify() {
     await fetchRpContext();
@@ -193,10 +194,28 @@ export default function LinkPage() {
         />
       )}
 
+      {/* Record already matches — no need to set again */}
+      {recordAlreadyMatches && !isSuccess && !isConfirming && !skippedToClaim && (
+        <div
+          className="glass-card animate-fade-in-up rounded-xl p-4"
+          style={{
+            border: "1px solid rgba(110,231,183,0.2)",
+            background: "rgba(110,231,183,0.05)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
+            <p className="text-sm" style={{ color: "#6EE7B7" }}>
+              Record already set to your nullifier — no transaction needed
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Record status card — show during confirming and after success */}
-      {isConfirming || isSuccess || skippedToClaim ? (
+      {isConfirming || isSuccess || skippedToClaim || recordAlreadyMatches ? (
         <>
-          {!skippedToClaim && (
+          {!skippedToClaim && !recordAlreadyMatches && (
             <div className="glass-card animate-fade-in-up rounded-xl p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div
@@ -255,7 +274,7 @@ export default function LinkPage() {
           )}
 
           {/* Next step — after confirmed or skipped */}
-          {(isSuccess || skippedToClaim) && (
+          {(isSuccess || skippedToClaim || recordAlreadyMatches) && (
             <div
               className="animate-fade-in-up delay-100 rounded-xl p-5 space-y-4"
               style={{
