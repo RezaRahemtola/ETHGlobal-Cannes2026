@@ -95,15 +95,17 @@ function RegisterFlow() {
             Your verified HumanENS subname has been registered.
           </p>
           {txHash && (
-            <a
-              href={`https://worldscan.org/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-xs transition-colors hover:underline"
-              style={{ color: "rgba(56,137,255,0.7)" }}
-            >
-              View on Worldscan
-            </a>
+            <p className="mt-2">
+              <a
+                href={`https://worldscan.org/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs transition-colors hover:underline"
+                style={{ color: "rgba(56,137,255,0.7)" }}
+              >
+                View on Worldscan
+              </a>
+            </p>
           )}
           <Link
             href="/app/agents"

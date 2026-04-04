@@ -84,9 +84,8 @@ export function useRegisterLink() {
 
       const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
 
-      // Step 4: Wait for confirmation
+      // Step 4: Wait for confirmation and get on-chain tx hash
       setStatus("confirming");
-      setTxHash(successPayload.transaction_id);
 
       let attempts = 0;
       while (attempts < 30) {
@@ -94,8 +93,10 @@ export function useRegisterLink() {
           `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
         );
         const statusData = await statusRes.json();
+        if (statusData.transactionHash) {
+          setTxHash(statusData.transactionHash);
+        }
         if (statusData.transactionStatus === "confirmed") {
-          setTxHash(statusData.transactionHash ?? successPayload.transaction_id);
           setStatus("success");
           return;
         }
