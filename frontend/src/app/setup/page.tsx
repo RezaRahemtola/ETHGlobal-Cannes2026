@@ -130,8 +130,8 @@ export default function LinkPage() {
               color: "rgba(251,191,36,0.85)",
             }}
           >
-            <strong>{selectedName}</strong> already has a <code>humanens</code> record.
-            Setting a new one will overwrite it.
+            <strong>{selectedName}</strong> already has a <code>humanens</code> record. Setting a
+            new one will overwrite it.
           </div>
         )}
       </div>
@@ -201,7 +201,9 @@ export default function LinkPage() {
                 <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#6EE7B7" }}>Record Set</p>
+                <p className="text-sm font-medium" style={{ color: "#6EE7B7" }}>
+                  Record Set
+                </p>
                 <p className="text-xs text-muted-foreground">
                   Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
                 </p>
@@ -234,7 +236,9 @@ export default function LinkPage() {
               <p className="text-sm font-medium">Next: Claim your subname</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Scan with World App to claim{" "}
-                <code style={{ color: "#6EE7B7" }}>{selectedName?.replace(".eth", "")}.humanens.eth</code>
+                <code style={{ color: "#6EE7B7" }}>
+                  {selectedName?.replace(".eth", "")}.humanens.eth
+                </code>
               </p>
             </div>
             {(() => {
@@ -244,11 +248,7 @@ export default function LinkPage() {
               return (
                 <div className="flex flex-col items-center gap-3">
                   <div className="rounded-xl bg-white p-3">
-                    <QRCodeSVG
-                      value={miniAppUrl}
-                      size={160}
-                      level="M"
-                    />
+                    <QRCodeSVG value={miniAppUrl} size={160} level="M" />
                   </div>
                   <a
                     href={miniAppUrl}
@@ -303,18 +303,22 @@ export default function LinkPage() {
 
           {(error || idkitError) && (
             <p className="text-center text-sm text-destructive leading-relaxed">
-              {idkitError || (() => {
-                const msg = (error as Error)?.message || "Unknown error";
-                if (msg.includes("User rejected")) return "Transaction rejected";
-                // Show resolver-specific errors directly (from our hook)
-                if (msg.includes("resolver") && (msg.includes("ENS app") || msg.includes("No resolver")))
-                  return msg;
-                if (msg.includes("Simulation Failed") || msg.includes("reverted"))
-                  return "Transaction would fail — try updating your resolver to the Latest Public Resolver in the ENS app";
-                const detailsMatch = msg.match(/Details:\s*(.+?)(?:\s*Version:|$)/);
-                if (detailsMatch) return detailsMatch[1].trim();
-                return msg.split("\n")[0].slice(0, 120);
-              })()}
+              {idkitError ||
+                (() => {
+                  const msg = (error as Error)?.message || "Unknown error";
+                  if (msg.includes("User rejected")) return "Transaction rejected";
+                  // Show resolver-specific errors directly (from our hook)
+                  if (
+                    msg.includes("resolver") &&
+                    (msg.includes("ENS app") || msg.includes("No resolver"))
+                  )
+                    return msg;
+                  if (msg.includes("Simulation Failed") || msg.includes("reverted"))
+                    return "Transaction would fail — try updating your resolver to the Latest Public Resolver in the ENS app";
+                  const detailsMatch = msg.match(/Details:\s*(.+?)(?:\s*Version:|$)/);
+                  if (detailsMatch) return detailsMatch[1].trim();
+                  return msg.split("\n")[0].slice(0, 120);
+                })()}
             </p>
           )}
         </>

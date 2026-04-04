@@ -46,7 +46,12 @@ const registryABI = [
 const ENS_REGISTRY = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e" as const;
 
 export function useSetTextRecord() {
-  const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract();
+  const {
+    writeContract,
+    data: hash,
+    isPending: isWritePending,
+    error: writeError,
+  } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const { switchChainAsync } = useSwitchChain();
   const [resolverError, setResolverError] = useState<string | null>(null);
@@ -79,7 +84,9 @@ export function useSetTextRecord() {
       ]);
 
       if (!resolver || resolver === "0x0000000000000000000000000000000000000000") {
-        setResolverError(`No resolver set for ${ensName}. Please set a resolver in the ENS app first.`);
+        setResolverError(
+          `No resolver set for ${ensName}. Please set a resolver in the ENS app first.`,
+        );
         return;
       }
 

@@ -1,11 +1,11 @@
 "use client";
 
+import { IrisLogo } from "@/components/iris-logo";
+import { WORLD_APP_ID } from "@/lib/constants";
 import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { usePathname } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import type { ReactNode } from "react";
-import { IrisLogo } from "@/components/iris-logo";
-import { WORLD_APP_ID } from "@/lib/constants";
 
 function MiniKitGateScreen() {
   const pathname = usePathname();
@@ -54,7 +54,7 @@ function MiniKitGateScreen() {
       {WORLD_APP_ID && (
         <a
           href={deepLink}
-          className="animate-fade-in-up delay-300 mt-8 items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl hidden max-[639px]:inline-flex"
+          className="mobile-only-btn animate-fade-in-up delay-300 mt-6 items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
           style={{ backgroundColor: "#fafafa", color: "#09090b" }}
         >
           Open in World App
@@ -62,8 +62,8 @@ function MiniKitGateScreen() {
       )}
 
       <p
-        className="animate-fade-in delay-400 text-xs"
-        style={{ color: "rgba(255,255,255,0.3)", marginTop: "48px" }}
+        className="animate-fade-in delay-400 mt-6 text-xs"
+        style={{ color: "rgba(255,255,255,0.3)" }}
       >
         or search{" "}
         <span className="font-medium" style={{ color: "rgba(110,231,183,0.6)" }}>
