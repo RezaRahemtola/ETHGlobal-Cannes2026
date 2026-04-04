@@ -123,15 +123,17 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     address ensOwner;
 
     // Verify backend attestation (World ID)
+    string memory level;
     {
-      (bytes32 _nul, uint256 attTimestamp, bytes memory attSig) = abi.decode(
+      (bytes32 _nul, string memory _level, uint256 attTimestamp, bytes memory attSig) = abi.decode(
         attestationData,
-        (bytes32, uint256, bytes)
+        (bytes32, string, uint256, bytes)
       );
       nullifierHash = _nul;
+      level = _level;
       require(block.timestamp <= attTimestamp + MAX_AGE, "Attestation expired");
       bytes32 attHash = keccak256(
-        abi.encodePacked("register", nullifierHash, sourceNode, label, attTimestamp)
+        abi.encodePacked("register", nullifierHash, sourceNode, label, level, attTimestamp)
       );
       require(_recover(attHash, attSig) == backendSigner, "Bad backend sig");
     }
@@ -168,20 +170,18 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     labelHashToSourceNode[keccak256(bytes(label))] = sourceNode;
 
     // Mint subname on L2 registry
-    _mintSubname(label, sourceName, ensOwner);
+    _mintSubname(label, ensOwner, level);
 
     emit LinkRegistered(label, sourceNode, nullifierHash, ensOwner);
   }
 
   /// @dev Mints a subname on the L2 registry with verification metadata.
-  function _mintSubname(string memory label, string memory sourceName, address ensOwner) internal {
+  function _mintSubname(string memory label, address ensOwner, string memory level) internal {
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
     registry.createSubnode(baseNode, label, address(this), new bytes[](0));
     registry.setAddr(node, ensOwner);
-    registry.setText(node, "world-id-verified", "true");
-    registry.setText(node, "world-id-level", "orb");
-    registry.setText(node, "source-name", sourceName);
+    registry.setText(node, "world-id-level", level);
   }
 
   // ─── Revoke Link ─────────────────────────────────────────────────────
