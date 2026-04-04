@@ -313,9 +313,10 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   /// @param parentLabel The parent subname label (must be a registered link)
   /// @param agentLabel The agent's label (e.g. "shopping-bot")
   /// @param agentAddress The address to set as the agent subname's ETH address
+  /// @param ensip25Key Optional ENSIP-25 text record key (empty string to skip)
   /// @param nullifierHash The parent's World ID nullifier
   /// @param timestamp Backend attestation timestamp
-  /// @param sig Backend signature over ("createAgent", sender, nullifier, parentLabel, agentLabel, agentAddress, timestamp)
+  /// @param sig Backend signature over ("createAgent", nullifier, parentLabel, agentLabel, agentAddress, ensip25Key, timestamp)
   function createAgentSubname(
     string calldata parentLabel,
     string calldata agentLabel,

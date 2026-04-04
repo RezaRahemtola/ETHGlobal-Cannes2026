@@ -214,8 +214,8 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-agent
- * Body: { idkitResult, parentLabel, agentLabel, agentAddress }
- * Hash: keccak256(abi.encodePacked("createAgent", nullifierHash, parentLabel, agentLabel, agentAddress, timestamp))
+ * Body: { idkitResult, parentLabel, agentLabel, agentAddress, ensip25Key? }
+ * Hash: keccak256(abi.encodePacked("createAgent", nullifierHash, parentLabel, agentLabel, agentAddress, ensip25Key, timestamp))
  */
 app.post("/api/verify-and-sign-agent", async (req, res) => {
   try {
