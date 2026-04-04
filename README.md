@@ -1,50 +1,79 @@
 # HumanENS
 
-Biometric-bound ENS identities using World ID. Prove you're human on-chain, protect your name from theft, and give your AI agents human-readable identities.
+Seen by the Orb, known by your name - World ID biometrics meet ENS naming. Prove you're human on-chain, protect your name, give your AI agents identity.
 
 ## Problem
 
-1. **ENS names are only as secure as your private key.** Wallet phished = name stolen. No recovery.
-2. **No way to distinguish human-owned ENS names from bot-owned ones.** As agents proliferate, proving human ownership becomes critical.
-3. **AI agents lack human-readable identity.** AgentKit gives agents a wallet + nullifier hash — but no naming, no discoverability, no visible link to their operator.
+1. **No way to prove an ENS name belongs to a real human.** Anyone can register a name — there's no on-chain signal distinguishing humans from bots. As AI agents proliferate, this distinction becomes critical.
+2. **AI agents have no human-readable identity.** An agent might have a wallet, but no name, no discoverability, and no visible link to its human operator.
+3. **No trust anchor for agent namespaces.** You can create ENS subnames, but nothing ties them back to a verified human — so there's no way to know who's behind an agent.
 
 ## How It Works
 
-### Mode 1: Vault
+### Verified Link
 
-Transfer your `alice.eth` to the HumanENS contract. Wallet hacked? Re-verify World ID → point name to new wallet. Attacker gets nothing.
-
-### Mode 2: Verified Link
-
-Keep ownership of `alice.eth`, get a verified `alice.humanens.eth` subname linked via bidirectional proof — no transfer required.
+Keep ownership of your `alice.eth`, get a verified `alice.humanens.eth` subname linked via bidirectional proof — no transfer required. Uses CCIP-Read (EIP-3668) for trustless L1→L2 ownership verification without bridging.
 
 ### Agent Subnames
 
-Create `shopping-bot.alice.humanens.eth` — a World ID-gated agent namespace where every name traces back to a verified human. Resolvable everywhere ENS works.
+Create `shopping-bot.alice.humanens.eth` — a World ID-gated agent namespace where every name traces back to a verified human. Resolvable everywhere ENS works, compatible with ENSIP-25 (for ERC-8004 agents bidirectional attestation) and with World's AgentBook to benefit from human-only privileges.
 
 ## Architecture
 
 ```
-Frontend (Next.js, IDKit, wagmi/viem)
+Frontend (Next.js, IDKit, MiniKit, wagmi/viem)
     │
-    ├── Backend (Express) ─── World ID v4 cloud verification + EIP-712 attestations
+    ├── Backend (Express) ─── World ID v4 cloud verification + EIP-712 attestations (temporary while v4 contracts are not on mainnet)
     │
-    ├── Ethereum Mainnet
-    │   ├── HumanENSVault.sol ─── lock/unlock/recover names
-    │   └── Durin L1 Resolver ─── CCIP-Read resolution for subnames
+    ├── Gateway (Express) ─── CCIP-Read L1 ENS ownership proofs
     │
     └── World Chain Mainnet
-        ├── HumanENSLinker.sol ─── register/revoke verified links + agent subnames
-        ├── Durin L2 Registry ──── subnames as ERC-721 + records
-        └── ENS Ownership Gateway ─ reads L1 ENS state via RPC
+        ├── ENS L2Registry ──── handles subnames
+        └── HumanENSLinker.sol ─── acts as a custom L2Registrar to register/revoke verified links & agent subnames
 ```
 
-## Tech Stack
+### Registration Flow
 
-- **Contracts**: Solidity (Durin, NameWrapper, EIP-712, CCIP-Read)
-- **Backend**: Express/Node.js
-- **Frontend**: Next.js, TypeScript, wagmi/viem, IDKit, MiniKit, ensjs
-- **Infra**: World Chain mainnet, Ethereum mainnet, Vercel
+```
+1. User enters their ENS label (e.g. "alice")
+2. Frontend checks if alice.eth already has a `humanens` text record set on L1 with a nullifier
+   └── If missing, user must first set it by following the steps or using the ENS app
+3. User switches to the World App & verifies their humanity again with World ID v4
+4. Frontend sends the World ID proof to the backend
+   └── Backend verifies the proof, signs an EIP-712 attestation (nullifier + label + timestamp)
+5. Frontend orchestrates CCIP-Read (EIP-3668):
+   └── Calls the gateway with the source ENS node
+   └── Gateway reads alice.eth owner + text record from L1 via RPC
+   └── Gateway returns a signed ownership proof
+6. Frontend sends a transaction via MiniKit in the World App
+   └── Contract verifies the backend signature (humanity proof)
+   └── Contract verifies the gateway signature (L1 ownership proof)
+   └── Contract checks freshness (10-min window) and one-link-per-nullifier
+   └── L2 Registry mints alice.humanens.eth on World Chain
+```
+
+### Agent Creation Flow
+
+```
+1. User enters an agent name (e.g. "shopping-bot") under their verified alice.humanens.eth
+2. User verifies with World ID v4 (proves they own the parent link)
+3. Frontend sends the proof to the backend
+   └── Backend verifies and signs an EIP-712 attestation for agent creation
+4. Frontend sends a transaction via MiniKit
+   └── Contract verifies signature + nullifier matches parent link owner
+   └── L2 Registry mints shopping-bot.alice.humanens.eth as an ERC-721
+5. (Optional) User sets an ENSIP-25 text record to link it to an ERC-8004 agent they might already have
+```
+
+## Project Structure
+
+```
+contracts/          Solidity — HumanENSLinker + Durin integration
+backend/            Express — World ID verification + EIP-712 attestation signing
+gateway/            Express — CCIP-Read ENS ownership gateway
+frontend/           Next.js 15 — World Mini App + browser UI
+register-agent/     CLI — ERC-8004 agent registration test script
+```
 
 ## Live Services
 
@@ -53,12 +82,11 @@ Frontend (Next.js, IDKit, wagmi/viem)
 | World ID Backend      | https://humanens-backend.reza.dev |
 | ENS Ownership Gateway | https://humanens-gateway.reza.dev |
 
-## Getting Started
-
-```bash
-# TODO
-```
-
-## License
-
-MIT
+<div align="center">
+  <h2>Made with ❤️ by</h2>
+  <a href="https://github.com/RezaRahemtola">
+    <img src="https://github.com/RezaRahemtola.png?size=85" width=85/>
+    <br>
+    <sub>Reza Rahemtola</sub>
+  </a>
+</div>
