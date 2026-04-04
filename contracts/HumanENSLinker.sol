@@ -3,6 +3,7 @@ pragma solidity ^0.8.34;
 
 import {IL2Registry} from "./interfaces/IL2Registry.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 /// @title HumanENSLinker
 /// @notice Custom registrar for humanens.eth — verified subnames backed by World ID.
@@ -11,7 +12,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 ///
 ///      Flow: registerLink() reverts with OffchainLookup → client calls gateway → client calls
 ///      registerLinkCallback() with signed response → contract verifies sigs & mints subname.
-contract HumanENSLinker is Ownable {
+contract HumanENSLinker is Ownable, IERC721Receiver {
   // ─── EIP-3668 ────────────────────────────────────────────────────────
 
   error OffchainLookup(
@@ -406,6 +407,16 @@ contract HumanENSLinker is Ownable {
   }
 
   // ─── Internal ────────────────────────────────────────────────────────
+
+  /// @dev Accept ERC-721 safe transfers (required by L2 Registry's _safeMint).
+  function onERC721Received(
+    address,
+    address,
+    uint256,
+    bytes calldata
+  ) external pure returns (bytes4) {
+    return IERC721Receiver.onERC721Received.selector;
+  }
 
   /// @dev Recovers the signer of an eth_sign-style signed message.
   function _recover(bytes32 hash, bytes memory sig) internal pure returns (address) {
