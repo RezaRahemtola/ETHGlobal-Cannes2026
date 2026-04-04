@@ -47,13 +47,14 @@ async function signAttestation(
   nullifierHash: Hex,
   sourceNode: Hex,
   label: string,
+  level: string,
   timestamp: bigint,
 ): Promise<Hex> {
-  // Must match contract: keccak256(abi.encodePacked(action, nullifierHash, sourceNode, label, timestamp))
+  // Must match contract: keccak256(abi.encodePacked(action, nullifierHash, sourceNode, label, level, timestamp))
   const hash = keccak256(
     encodePacked(
-      ["string", "bytes32", "bytes32", "string", "uint256"],
-      [action, nullifierHash, sourceNode, label, timestamp],
+      ["string", "bytes32", "bytes32", "string", "string", "uint256"],
+      [action, nullifierHash, sourceNode, label, level, timestamp],
     ),
   );
   return account.signMessage({ message: { raw: hash } });
@@ -119,23 +120,25 @@ app.post("/api/verify-nullifier", async (req, res) => {
  * Body: {
  *   idkitResult: <raw IDKit result payload>,
  *   sourceNode: "0x...",      // namehash of alice.eth
- *   label: "alice"            // desired subname label
+ *   label: "alice",           // desired subname label
+ *   level: "orb"              // World ID verification level
  * }
  *
  * Returns: {
  *   nullifierHash, timestamp, signature,
- *   attestationData  // abi.encode(nullifierHash, timestamp, signature) — ready for contract
+ *   attestationData  // abi.encode(nullifierHash, level, timestamp, signature) — ready for contract
  * }
  */
 app.post("/api/verify-and-attest", async (req, res) => {
   try {
-    const { idkitResult, sourceNode, label } = req.body;
+    const { idkitResult, sourceNode, label, level } = req.body;
 
-    if (!idkitResult || !sourceNode || !label) {
+    if (!idkitResult || !sourceNode || !label || !level) {
       const missing = [
         !idkitResult && "idkitResult",
         !sourceNode && "sourceNode",
         !label && "label",
+        !level && "level",
       ].filter(Boolean);
       console.error("verify-and-attest missing fields:", missing.join(", "));
       return res.status(400).json({ error: `Missing fields: ${missing.join(", ")}` });
@@ -143,7 +146,9 @@ app.post("/api/verify-and-attest", async (req, res) => {
 
     // Step 1: Verify World ID proof via cloud API
     const { nullifierHash } = await verifyWorldId(idkitResult);
-    console.log(`Verified World ID for ${label} — nullifier: ${nullifierHash.slice(0, 10)}...`);
+    console.log(
+      `Verified World ID for ${label} (${level}) — nullifier: ${nullifierHash.slice(0, 10)}...`,
+    );
 
     // Step 2: Sign attestation for the Linker contract
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
@@ -152,15 +157,15 @@ app.post("/api/verify-and-attest", async (req, res) => {
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
+      level,
       timestamp,
     );
 
-    // ABI-encode for the contract: abi.encode(nullifierHash, timestamp, signature)
-    const attestationData = encodeAbiParameters(parseAbiParameters("bytes32, uint256, bytes"), [
-      nullifierHash as Hex,
-      timestamp,
-      signature,
-    ]);
+    // ABI-encode for the contract: abi.encode(nullifierHash, level, timestamp, signature)
+    const attestationData = encodeAbiParameters(
+      parseAbiParameters("bytes32, string, uint256, bytes"),
+      [nullifierHash as Hex, level, timestamp, signature],
+    );
 
     res.json({
       nullifierHash,
