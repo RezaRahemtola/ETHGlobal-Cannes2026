@@ -5,7 +5,9 @@ import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
 import { useRegisterLink } from "@/hooks/use-register-link";
+import { useRevokeLink } from "@/hooks/use-revoke-link";
 import { useIdkitVerify } from "@/hooks/use-idkit-verify";
+import { useMyLabels } from "@/hooks/use-my-labels";
 import { getEnsTextRecord } from "@/lib/ens";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +16,13 @@ function RegisterFlow() {
   const searchParams = useSearchParams();
   const [label, setLabel] = useState(searchParams.get("label") ?? "");
   const { register, status, error, txHash } = useRegisterLink();
+  const {
+    revokeLink,
+    status: revokeStatus,
+    error: revokeError,
+    reset: revokeReset,
+  } = useRevokeLink();
+  const { labels, isLoading: isLoadingLabels, saveNullifier, needsVerify } = useMyLabels();
   const [recordCheck, setRecordCheck] = useState<"idle" | "loading" | "valid" | "missing">("idle");
   const [recordValue, setRecordValue] = useState<string | null>(null);
   const [nullifierError, setNullifierError] = useState<string | null>(null);
@@ -21,12 +30,16 @@ function RegisterFlow() {
     rpContext,
     isLoadingRp,
     fetchRpContext,
+    verifyNullifier,
     error: idkitError,
     appId,
     action,
   } = useIdkitVerify();
 
   const [idkitOpen, setIdkitOpen] = useState(false);
+  const [identifyIdkitOpen, setIdentifyIdkitOpen] = useState(false);
+  const [revokeIdkitOpen, setRevokeIdkitOpen] = useState(false);
+  const [revokeLabel, setRevokeLabel] = useState<string | null>(null);
 
   // Check if {label}.eth has a humanens text record
   useEffect(() => {
@@ -61,6 +74,71 @@ function RegisterFlow() {
   async function handleStartVerify() {
     await fetchRpContext();
     setIdkitOpen(true);
+  }
+
+  async function handleIdentify() {
+    await fetchRpContext();
+    setIdentifyIdkitOpen(true);
+  }
+
+  async function handleIdentifySuccess(result: unknown) {
+    try {
+      const hash = await verifyNullifier(result);
+      saveNullifier(hash);
+    } catch (e) {
+      console.error("Failed to verify identity:", e);
+    }
+  }
+
+  async function handleStartRevoke(l: string) {
+    setRevokeLabel(l);
+    await fetchRpContext();
+    setRevokeIdkitOpen(true);
+  }
+
+  function handleRevokeIdkitSuccess(result: unknown) {
+    if (revokeLabel) {
+      revokeLink({ label: revokeLabel, idkitResult: result });
+    }
+  }
+
+  if (revokeStatus === "success") {
+    return (
+      <main className="mx-auto max-w-lg px-4 py-10">
+        <StepIndicator currentStep={2} />
+        <div
+          className="mt-6 rounded-xl p-6 text-center animate-fade-in-up"
+          style={{
+            border: "1px solid rgba(239,68,68,0.2)",
+            background: "rgba(239,68,68,0.04)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+          }}
+        >
+          <div
+            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
+            style={{ background: "rgba(239,68,68,0.12)" }}
+          >
+            <span className="text-xl text-destructive">&#x2713;</span>
+          </div>
+          <h2 className="text-lg font-semibold text-destructive">
+            {revokeLabel}.humanens.eth unlinked
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your HumanENS subname has been removed. You can register a new one.
+          </p>
+          <button
+            onClick={() => {
+              revokeReset();
+              setRevokeLabel(null);
+            }}
+            className="mt-5 inline-flex items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
+            style={{ backgroundColor: "#fafafa", color: "#09090b" }}
+          >
+            Register New Name
+          </button>
+        </div>
+      </main>
+    );
   }
 
   if (status === "success") {
@@ -127,6 +205,69 @@ function RegisterFlow() {
         <h1 className="text-[22px] font-bold tracking-tight">Register subname</h1>
         <p className="text-[13px] text-muted-foreground">Verify &amp; claim your .humanens.eth</p>
       </div>
+
+      {/* Existing domain detection */}
+      {needsVerify ? (
+        <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-3">
+          <p className="text-sm text-muted-foreground text-center">
+            Verify your World ID to check if you already have a HumanENS name
+          </p>
+          <button
+            onClick={handleIdentify}
+            disabled={isLoadingRp}
+            className="w-full h-10 rounded-full text-sm font-medium text-white transition-all hover:scale-[1.01] disabled:opacity-40 disabled:hover:scale-100"
+            style={{
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.06)",
+            }}
+          >
+            {isLoadingRp ? "Loading..." : "Check Existing Names"}
+          </button>
+        </div>
+      ) : isLoadingLabels ? (
+        <p className="text-sm text-muted-foreground animate-pulse text-center">
+          Checking existing names...
+        </p>
+      ) : labels.length > 0 ? (
+        <div
+          className="rounded-xl p-4 animate-fade-in-up delay-100 space-y-3"
+          style={{
+            border: "1px solid rgba(251,191,36,0.2)",
+            background: "rgba(251,191,36,0.04)",
+            boxShadow: "inset 0 1px 0 rgba(251,191,36,0.06)",
+          }}
+        >
+          <p
+            className="text-[11px] uppercase tracking-[0.5px]"
+            style={{ color: "rgba(255,255,255,0.35)" }}
+          >
+            Existing names
+          </p>
+          {labels.map((l) => (
+            <div key={l} className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-white">
+                {l}
+                <span className="text-muted-foreground font-normal">.humanens.eth</span>
+              </p>
+              <button
+                onClick={() => handleStartRevoke(l)}
+                disabled={(revokeStatus !== "idle" && revokeStatus !== "error") || isLoadingRp}
+                className="shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-all hover:scale-[1.01] border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {revokeLabel === l && revokeStatus === "attesting"
+                  ? "Attesting..."
+                  : revokeLabel === l && revokeStatus === "sending"
+                    ? "Confirm in App..."
+                    : "Unlink"}
+              </button>
+            </div>
+          ))}
+          {revokeError && <p className="text-xs text-destructive">{revokeError}</p>}
+          <p className="text-xs text-muted-foreground">
+            Unlink a name to free your World ID for a new registration.
+          </p>
+        </div>
+      ) : null}
 
       {/* Label input */}
       <div className="glass-card animate-fade-in-up delay-100 rounded-xl p-4">
@@ -265,6 +406,33 @@ function RegisterFlow() {
         <p className="text-center text-sm text-destructive">
           {nullifierError || error || idkitError}
         </p>
+      )}
+
+      {rpContext && (
+        <>
+          <IDKitRequestWidget
+            open={identifyIdkitOpen}
+            onOpenChange={setIdentifyIdkitOpen}
+            app_id={appId as `app_${string}`}
+            action={action}
+            rp_context={rpContext}
+            allow_legacy_proofs={true}
+            preset={deviceLegacy()}
+            onSuccess={handleIdentifySuccess}
+            onError={(code) => console.error("IDKit identify error", code)}
+          />
+          <IDKitRequestWidget
+            open={revokeIdkitOpen}
+            onOpenChange={setRevokeIdkitOpen}
+            app_id={appId as `app_${string}`}
+            action={action}
+            rp_context={rpContext}
+            allow_legacy_proofs={true}
+            preset={deviceLegacy()}
+            onSuccess={handleRevokeIdkitSuccess}
+            onError={(code) => console.error("IDKit revoke error", code)}
+          />
+        </>
       )}
     </main>
   );
