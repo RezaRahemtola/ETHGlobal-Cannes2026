@@ -185,27 +185,48 @@ export default function LinkPage() {
         />
       )}
 
-      {/* Preview / Success */}
-      {isSuccess ? (
+      {/* Record status card — show during confirming and after success */}
+      {isConfirming || isSuccess ? (
         <>
-          {/* Success card */}
           <div className="glass-card animate-fade-in-up rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="animate-subtle-pulse flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                  isConfirming && "animate-pulse",
+                  isSuccess && "animate-subtle-pulse",
+                )}
                 style={{
-                  backgroundColor: "rgba(110,231,183,0.1)",
-                  boxShadow: "0 0 12px rgba(110,231,183,0.3)",
+                  backgroundColor: isSuccess ? "rgba(110,231,183,0.1)" : "rgba(56,137,255,0.1)",
+                  boxShadow: isSuccess
+                    ? "0 0 12px rgba(110,231,183,0.3)"
+                    : "0 0 12px rgba(56,137,255,0.3)",
                 }}
               >
-                <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
+                {isSuccess ? (
+                  <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
+                ) : (
+                  <span
+                    className="block h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
+                    style={{ borderColor: "#3889FF", borderTopColor: "transparent" }}
+                  />
+                )}
               </div>
               <div>
-                <p className="text-sm font-medium" style={{ color: "#6EE7B7" }}>
-                  Record Set
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: isSuccess ? "#6EE7B7" : "#3889FF" }}
+                >
+                  {isSuccess ? "Record Set" : "Confirming..."}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
+                  {isSuccess ? (
+                    <>
+                      Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
+                    </>
+                  ) : (
+                    "Waiting for transaction confirmation"
+                  )}
                 </p>
               </div>
             </div>
@@ -223,49 +244,51 @@ export default function LinkPage() {
             )}
           </div>
 
-          {/* Next step */}
-          <div
-            className="animate-fade-in-up delay-100 rounded-xl p-5 space-y-4"
-            style={{
-              border: "1px solid rgba(56,137,255,0.12)",
-              background: "rgba(56,137,255,0.03)",
-              boxShadow: "inset 0 1px 0 rgba(56,137,255,0.06)",
-            }}
-          >
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Next: Claim your subname</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Scan with World App to claim{" "}
-                <code style={{ color: "#6EE7B7" }}>
-                  {selectedName?.replace(".eth", "")}.humanens.eth
-                </code>
-              </p>
-            </div>
-            {(() => {
-              const labelParam = selectedName?.replace(".eth", "") ?? "";
-              const registerPath = encodeURIComponent(`/app/claim?label=${labelParam}`);
-              const miniAppUrl = `https://worldcoin.org/mini-app?app_id=${appId}&path=${registerPath}`;
-              return (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="rounded-xl bg-white p-3">
-                    <QRCodeSVG value={miniAppUrl} size={160} level="M" />
+          {/* Next step — only after confirmed */}
+          {isSuccess && (
+            <div
+              className="animate-fade-in-up delay-100 rounded-xl p-5 space-y-4"
+              style={{
+                border: "1px solid rgba(56,137,255,0.12)",
+                background: "rgba(56,137,255,0.03)",
+                boxShadow: "inset 0 1px 0 rgba(56,137,255,0.06)",
+              }}
+            >
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Next: Claim your subname</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Scan with World App to claim{" "}
+                  <code style={{ color: "#6EE7B7" }}>
+                    {selectedName?.replace(".eth", "")}.humanens.eth
+                  </code>
+                </p>
+              </div>
+              {(() => {
+                const labelParam = selectedName?.replace(".eth", "") ?? "";
+                const registerPath = encodeURIComponent(`/app/claim?label=${labelParam}`);
+                const miniAppUrl = `https://worldcoin.org/mini-app?app_id=${appId}&path=${registerPath}`;
+                return (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="rounded-xl bg-white p-3">
+                      <QRCodeSVG value={miniAppUrl} size={160} level="M" />
+                    </div>
+                    <a
+                      href={miniAppUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-10 items-center justify-center rounded-full px-6 text-sm font-medium transition-all hover:scale-[1.02]"
+                      style={{
+                        background: "linear-gradient(135deg, #6EE7B7, #3889FF)",
+                        color: "#09090b",
+                      }}
+                    >
+                      Open World App
+                    </a>
                   </div>
-                  <a
-                    href={miniAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-10 items-center justify-center rounded-full px-6 text-sm font-medium transition-all hover:scale-[1.02]"
-                    style={{
-                      background: "linear-gradient(135deg, #6EE7B7, #3889FF)",
-                      color: "#09090b",
-                    }}
-                  >
-                    Open World App
-                  </a>
-                </div>
-              );
-            })()}
-          </div>
+                );
+              })()}
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -298,7 +321,7 @@ export default function LinkPage() {
             disabled={!hasVerified || isPending || isConfirming}
             onClick={() => selectedName && nullifier && setTextRecord(selectedName, nullifier)}
           >
-            {isPending ? "Confirm in wallet..." : isConfirming ? "Confirming..." : "Set Record"}
+            {isPending ? "Confirm in wallet..." : "Set Record"}
           </button>
 
           {(error || idkitError) && (
@@ -307,7 +330,6 @@ export default function LinkPage() {
                 (() => {
                   const msg = (error as Error)?.message || "Unknown error";
                   if (msg.includes("User rejected")) return "Transaction rejected";
-                  // Show resolver-specific errors directly (from our hook)
                   if (
                     msg.includes("resolver") &&
                     (msg.includes("ENS app") || msg.includes("No resolver"))
