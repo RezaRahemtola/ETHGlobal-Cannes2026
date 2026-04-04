@@ -85,8 +85,8 @@ register-agent/     CLI — ERC-8004 agent registration test script
 <div align="center">
   <h2>Made with ❤️ by</h2>
   <a href="https://github.com/RezaRahemtola">
-    <img src="https://github.com/RezaRahemtola.png?size=85" width=85/>
+    <img src="https://github.com/RezaRahemtola.png" width=100/>
     <br>
-    <sub>Reza Rahemtola</sub>
+    <span>Reza Rahemtola</span>
   </a>
 </div>
