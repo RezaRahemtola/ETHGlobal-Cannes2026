@@ -186,10 +186,13 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   }
 
   /// @dev Mints a subname on the L2 registry with verification metadata.
+  ///      Re-uses the existing token if the subname was previously created (e.g. after revoke).
   function _mintSubname(string memory label, address ensOwner, string memory level) internal {
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
-    registry.createSubnode(baseNode, label, address(this), new bytes[](0));
+    if (registry.owner(node) == address(0)) {
+      registry.createSubnode(baseNode, label, address(this), new bytes[](0));
+    }
     registry.setAddr(node, ensOwner);
     registry.setText(node, "world-id-level", level);
   }
@@ -355,15 +358,12 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       "exists"
     );
 
-    // Clear stale token if re-creating after parent revoke
-    if (existingNullifier != bytes32(0)) {
-      registry.setAddr(agentNode, address(0));
-    }
-
     agentToParentNullifier[agentNode] = nullifierHash;
     nullifierAgentNodes[nullifierHash].push(agentNode);
 
-    registry.createSubnode(parentNode, agentLabel, address(this), new bytes[](0));
+    if (registry.owner(agentNode) == address(0)) {
+      registry.createSubnode(parentNode, agentLabel, address(this), new bytes[](0));
+    }
     registry.setAddr(agentNode, agentAddress);
 
     if (bytes(ensip25Key).length > 0) {
