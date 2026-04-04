@@ -364,8 +364,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     registry.createSubnode(parentNode, agentLabel, address(this), new bytes[](0));
     registry.setAddr(agentNode, agentAddress);
-    registry.setText(agentNode, "agent", "true");
-    registry.setText(agentNode, "operator", parentLabel);
 
     emit AgentCreated(parentLabel, agentLabel, agentAddress);
   }
