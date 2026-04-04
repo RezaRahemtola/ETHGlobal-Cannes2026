@@ -191,11 +191,7 @@ function RegisterFlow() {
         disabled={!label || status !== "idle" || isLoadingRp}
         onClick={handleStartVerify}
       >
-        {status === "idle"
-          ? isLoadingRp
-            ? "Loading..."
-            : "Verify & Register"
-          : "Processing..."}
+        {status === "idle" ? (isLoadingRp ? "Loading..." : "Verify & Register") : "Processing..."}
       </button>
 
       {(error || idkitError) && (

@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  MiniKit,
-  type MiniAppSendTransactionSuccessPayload,
-} from "@worldcoin/minikit-js";
+import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { useAgents } from "@/hooks/use-agents";
@@ -15,13 +12,7 @@ import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 
 // ---- Revoke hook (inline, similar to create) ----
-type RevokeStatus =
-  | "idle"
-  | "attesting"
-  | "sending"
-  | "confirming"
-  | "success"
-  | "error";
+type RevokeStatus = "idle" | "attesting" | "sending" | "confirming" | "success" | "error";
 
 function useRevokeAgent() {
   const [status, setStatus] = useState<RevokeStatus>("idle");
@@ -36,12 +27,14 @@ function useRevokeAgent() {
     setError(null);
 
     try {
-      const attResponse = await fetch(`${BACKEND_URL}/api/attest-revoke-agent`, {
+      const registrant = MiniKit.user.walletAddress as `0x${string}`;
+      const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-sign-revoke-agent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           parentLabel: args.parentLabel,
           agentLabel: args.agentLabel,
+          registrant,
           idkitResult: args.idkitResult,
         }),
       });
@@ -477,7 +470,8 @@ function ManageFlow() {
                   disabled={!canCreate || isLoadingCreateRp}
                   className={cn(
                     "btn-glow flex-1 h-10 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01]",
-                    (!canCreate || isLoadingCreateRp) && "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-lg",
+                    (!canCreate || isLoadingCreateRp) &&
+                      "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-lg",
                   )}
                   style={{
                     background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",

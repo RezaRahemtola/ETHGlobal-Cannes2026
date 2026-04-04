@@ -22,10 +22,7 @@ export function useRegisterLink() {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  async function register(args: {
-    label: string;
-    idkitResult: unknown;
-  }) {
+  async function register(args: { label: string; idkitResult: unknown }) {
     setStatus("attesting");
     setError(null);
 
@@ -34,12 +31,14 @@ export function useRegisterLink() {
       const sourceNode = namehash(sourceName) as `0x${string}`;
 
       // Step 1: Get backend attestation
-      const attResponse = await fetch(`${BACKEND_URL}/api/attest`, {
+      const sender = MiniKit.user.walletAddress as `0x${string}`;
+      const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-attest`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           label: args.label,
           sourceNode,
+          registrant: sender,
           idkitResult: args.idkitResult,
         }),
       });
@@ -52,7 +51,6 @@ export function useRegisterLink() {
 
       // Step 2: CCIP-Read orchestration
       setStatus("ccip");
-      const sender = MiniKit.user.walletAddress as `0x${string}`;
 
       const [response, extraData] = await buildRegisterLinkCallbackArgs({
         label: args.label,
