@@ -43,7 +43,10 @@ export function useRegisterLink() {
         }),
       });
 
-      if (!attResponse.ok) throw new Error("Backend attestation failed");
+      if (!attResponse.ok) {
+        const body = await attResponse.json().catch(() => ({}));
+        throw new Error(body.error || `Backend attestation failed (${attResponse.status})`);
+      }
 
       const { attestationData } = (await attResponse.json()) as {
         attestationData: `0x${string}`;

@@ -495,7 +495,7 @@ function ManageFlow() {
 
 export default function ManagePage() {
   return (
-    <MiniKitGate>
+    <MiniKitGate description="Scan this QR code with World App to manage your agent subnames.">
       <ManageFlow />
     </MiniKitGate>
   );

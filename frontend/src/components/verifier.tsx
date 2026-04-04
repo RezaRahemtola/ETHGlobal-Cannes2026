@@ -9,7 +9,10 @@ export function Verifier() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) verify(name.trim());
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const normalized = trimmed.endsWith(".eth") ? trimmed : `${trimmed}.eth`;
+    verify(normalized);
   };
 
   return (

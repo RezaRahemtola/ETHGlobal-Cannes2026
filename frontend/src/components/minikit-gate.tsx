@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import type { ReactNode } from "react";
 
-function MiniKitGateScreen() {
+function MiniKitGateScreen({ description }: { description?: string }) {
   const pathname = usePathname();
   const encodedPath = encodeURIComponent(pathname);
   const universalLink = `https://world.org/mini-app?app_id=${WORLD_APP_ID}&path=${encodedPath}`;
@@ -27,28 +27,25 @@ function MiniKitGateScreen() {
       <IrisLogo size={48} className="mb-6 animate-fade-in" />
       <h2 className="animate-fade-in-up text-xl font-bold tracking-tight">Continue in World App</h2>
       <p className="animate-fade-in-up delay-100 mt-2 max-w-xs text-sm text-muted-foreground leading-relaxed">
-        Scan this QR code with World App to verify your identity and register your subname.
+        {description ??
+          "Scan this QR code with World App to verify your identity and register your subname."}
       </p>
 
-      <div
-        className="animate-fade-in-up delay-200 relative mt-8 rounded-2xl bg-white p-3"
-        style={{
-          boxShadow:
-            "0 0 40px rgba(110,231,183,0.1), 0 0 80px rgba(56,137,255,0.06), 0 8px 32px rgba(0,0,0,0.3)",
-        }}
-      >
-        <QRCodeSVG
-          value={universalLink}
-          size={180}
-          level="M"
-          imageSettings={{
-            src: "",
-            height: 0,
-            width: 0,
-            excavate: false,
+      {WORLD_APP_ID ? (
+        <div
+          className="animate-fade-in-up delay-200 relative mt-8 rounded-2xl bg-white p-3"
+          style={{
+            boxShadow:
+              "0 0 40px rgba(110,231,183,0.1), 0 0 80px rgba(56,137,255,0.06), 0 8px 32px rgba(0,0,0,0.3)",
           }}
-        />
-      </div>
+        >
+          <QRCodeSVG value={universalLink} size={180} level="M" />
+        </div>
+      ) : (
+        <p className="animate-fade-in-up delay-200 mt-8 text-sm text-destructive">
+          App configuration missing. Please set NEXT_PUBLIC_WORLD_APP_ID.
+        </p>
+      )}
 
       {/* "Open in World App" — mobile only */}
       {WORLD_APP_ID && (
@@ -75,11 +72,17 @@ function MiniKitGateScreen() {
   );
 }
 
-export function MiniKitGate({ children }: { children: ReactNode }) {
+export function MiniKitGate({
+  children,
+  description,
+}: {
+  children: ReactNode;
+  description?: string;
+}) {
   const { isInstalled } = useMiniKit();
 
   if (!isInstalled) {
-    return <MiniKitGateScreen />;
+    return <MiniKitGateScreen description={description} />;
   }
 
   return <>{children}</>;
