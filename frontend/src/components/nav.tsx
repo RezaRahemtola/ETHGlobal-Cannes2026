@@ -8,15 +8,15 @@ import { cn } from "@/lib/utils";
 
 const browserLinks = [
   { href: "/", label: "Home" },
-  { href: "/link", label: "Link" },
-  { href: "/app", label: "Register" },
-  { href: "/app/manage", label: "Agents" },
+  { href: "/setup", label: "Setup" },
+  { href: "/app/claim", label: "Claim" },
+  { href: "/app/agents", label: "Agents" },
 ];
 
 const miniAppLinks = [
   { href: "/app", label: "Home" },
-  { href: "/app/register", label: "Register" },
-  { href: "/app/manage", label: "Agents" },
+  { href: "/app/claim", label: "Claim" },
+  { href: "/app/agents", label: "Agents" },
 ];
 
 export function Nav() {

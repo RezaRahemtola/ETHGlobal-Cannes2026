@@ -14,5 +14,5 @@ export default function Home() {
     }
   }, [router]);
 
-  return <Landing ctaHref="/link" />;
+  return <Landing ctaHref="/setup" />;
 }

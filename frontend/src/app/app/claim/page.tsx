@@ -77,7 +77,7 @@ function RegisterFlow() {
             </p>
           )}
           <Link
-            href="/app/manage"
+            href="/app/agents"
             className="mt-5 inline-flex items-center rounded-full px-6 py-2.5 text-sm font-medium shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
             style={{ backgroundColor: "#fafafa", color: "#09090b" }}
           >

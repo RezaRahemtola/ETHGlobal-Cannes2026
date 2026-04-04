@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAccount } from "wagmi";
+import { getEnsTextRecord } from "@/lib/ens";
 
 export default function LinkPage() {
   const router = useRouter();
@@ -44,6 +45,20 @@ export default function LinkPage() {
   } = useIdkitVerify();
 
   const [idkitOpen, setIdkitOpen] = useState(false);
+  const [existingRecord, setExistingRecord] = useState<string | null>(null);
+  const [checkingRecord, setCheckingRecord] = useState(false);
+
+  useEffect(() => {
+    if (!selectedName) {
+      setExistingRecord(null);
+      return;
+    }
+    setCheckingRecord(true);
+    getEnsTextRecord(selectedName, "humanens")
+      .then((val) => setExistingRecord(val ?? null))
+      .catch(() => setExistingRecord(null))
+      .finally(() => setCheckingRecord(false));
+  }, [selectedName]);
 
   const hasVerified = !!nullifier;
 
@@ -105,6 +120,19 @@ export default function LinkPage() {
               </option>
             ))}
           </select>
+        )}
+        {existingRecord && !checkingRecord && (
+          <div
+            className="mt-3 rounded-lg px-3 py-2 text-xs leading-relaxed"
+            style={{
+              border: "1px solid rgba(251,191,36,0.2)",
+              background: "rgba(251,191,36,0.05)",
+              color: "rgba(251,191,36,0.85)",
+            }}
+          >
+            <strong>{selectedName}</strong> already has a <code>humanens</code> record.
+            Setting a new one will overwrite it.
+          </div>
         )}
       </div>
 
@@ -211,7 +239,7 @@ export default function LinkPage() {
             </div>
             {(() => {
               const labelParam = selectedName?.replace(".eth", "") ?? "";
-              const registerPath = encodeURIComponent(`/app/register?label=${labelParam}`);
+              const registerPath = encodeURIComponent(`/app/claim?label=${labelParam}`);
               const miniAppUrl = `https://worldcoin.org/mini-app?app_id=${appId}&path=${registerPath}`;
               return (
                 <div className="flex flex-col items-center gap-3">
@@ -275,7 +303,15 @@ export default function LinkPage() {
 
           {(error || idkitError) && (
             <p className="text-center text-sm text-destructive">
-              {(error as Error)?.message || idkitError}
+              {idkitError || (() => {
+                const msg = (error as Error)?.message || "Unknown error";
+                if (msg.includes("User rejected")) return "Transaction rejected";
+                if (msg.includes("Simulation Failed") || msg.includes("reverted"))
+                  return "Transaction would fail — your name's resolver may not allow this";
+                const detailsMatch = msg.match(/Details:\s*(.+?)(?:\s*Version:|$)/);
+                if (detailsMatch) return detailsMatch[1].trim();
+                return msg.split("\n")[0].slice(0, 120);
+              })()}
             </p>
           )}
         </>

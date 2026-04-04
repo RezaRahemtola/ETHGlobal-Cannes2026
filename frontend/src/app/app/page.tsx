@@ -1,5 +1,5 @@
 import { Landing } from "@/components/landing";
 
 export default function AppLanding() {
-  return <Landing ctaHref="/app/register" />;
+  return <Landing ctaHref="/app/claim" />;
 }
