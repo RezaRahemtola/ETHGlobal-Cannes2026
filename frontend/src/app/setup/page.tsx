@@ -302,12 +302,15 @@ export default function LinkPage() {
           </button>
 
           {(error || idkitError) && (
-            <p className="text-center text-sm text-destructive">
+            <p className="text-center text-sm text-destructive leading-relaxed">
               {idkitError || (() => {
                 const msg = (error as Error)?.message || "Unknown error";
                 if (msg.includes("User rejected")) return "Transaction rejected";
+                // Show resolver-specific errors directly (from our hook)
+                if (msg.includes("resolver") && (msg.includes("ENS app") || msg.includes("No resolver")))
+                  return msg;
                 if (msg.includes("Simulation Failed") || msg.includes("reverted"))
-                  return "Transaction would fail — your name's resolver may not allow this";
+                  return "Transaction would fail — try updating your resolver to the Latest Public Resolver in the ENS app";
                 const detailsMatch = msg.match(/Details:\s*(.+?)(?:\s*Version:|$)/);
                 if (detailsMatch) return detailsMatch[1].trim();
                 return msg.split("\n")[0].slice(0, 120);

@@ -35,8 +35,12 @@ export async function getEnsNamesForAddress(address: `0x${string}`) {
   ];
 
   const addr = address.toLowerCase();
+  // Query both regular domains AND wrapped domains (NameWrapper)
   const query = JSON.stringify({
-    query: `{ domains(where: { owner: "${addr}", name_not: null }, first: 50) { name } }`,
+    query: `{
+      domains(where: { owner: "${addr}", name_not: null }, first: 50) { name }
+      wrappedDomains(where: { owner: "${addr}" }, first: 50) { domain { name } }
+    }`,
   });
 
   for (const url of subgraphUrls) {
@@ -47,10 +51,18 @@ export async function getEnsNamesForAddress(address: `0x${string}`) {
         body: query,
       });
       const data = await response.json();
-      if (data?.data?.domains) {
-        for (const domain of data.data.domains) {
+      if (data?.data) {
+        // Regular (unwrapped) domains
+        for (const domain of data.data.domains ?? []) {
           if (domain.name?.endsWith(".eth") && !names.includes(domain.name)) {
             names.push(domain.name);
+          }
+        }
+        // Wrapped domains via NameWrapper
+        for (const wrapped of data.data.wrappedDomains ?? []) {
+          const name = wrapped.domain?.name;
+          if (name?.endsWith(".eth") && !names.includes(name)) {
+            names.push(name);
           }
         }
         break; // Success — don't try next URL
