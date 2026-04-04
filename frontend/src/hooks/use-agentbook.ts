@@ -89,7 +89,7 @@ export function useAgentBookRegister() {
         proof: string;
       };
       const proofChunks = Array.from({ length: 8 }, (_, i) =>
-        BigInt("0x" + vr.proof.slice(2 + i * 64, 2 + (i + 1) * 64))
+        BigInt("0x" + vr.proof.slice(2 + i * 64, 2 + (i + 1) * 64)),
       );
 
       // Call AgentBook.register() directly via MiniKit

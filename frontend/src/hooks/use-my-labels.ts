@@ -49,9 +49,7 @@ async function resolveLabels(nullifierHash: `0x${string}`): Promise<string[]> {
     toBlock: "latest",
   });
 
-  const labels = logs
-    .filter((l) => l.args.sourceNode === sourceNode)
-    .map((l) => l.args.label!);
+  const labels = logs.filter((l) => l.args.sourceNode === sourceNode).map((l) => l.args.label!);
 
   return labels;
 }

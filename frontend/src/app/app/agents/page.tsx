@@ -51,7 +51,10 @@ function useRevokeAgent() {
         timestamp: string;
         signature: `0x${string}`;
       };
-      console.log("[revoke] Got attestation:", { nullifierHash: nullifierHash.slice(0, 10), timestamp });
+      console.log("[revoke] Got attestation:", {
+        nullifierHash: nullifierHash.slice(0, 10),
+        timestamp,
+      });
 
       setStatus("sending");
 
@@ -85,13 +88,7 @@ function useRevokeAgent() {
 }
 
 // ---- Agent card ----
-function AgentCard({
-  agent,
-  onRevoked,
-}: {
-  agent: Agent;
-  onRevoked: () => void;
-}) {
+function AgentCard({ agent, onRevoked }: { agent: Agent; onRevoked: () => void }) {
   const { revokeAgent, status, error, reset } = useRevokeAgent();
   const { rpContext, isLoadingRp, fetchRpContext, appId, action } = useIdkitVerify();
   const [idkitOpen, setIdkitOpen] = useState(false);
@@ -191,9 +188,7 @@ function AgentCard({
           className="rounded-lg px-3 py-2 space-y-1.5"
           style={{ background: "rgba(56,137,255,0.05)", border: "1px solid rgba(56,137,255,0.15)" }}
         >
-          <p className="text-[11px] text-muted-foreground">
-            Register via CLI:
-          </p>
+          <p className="text-[11px] text-muted-foreground">Register via CLI:</p>
           <code
             className="block text-[11px] font-mono break-all px-2 py-1.5 rounded"
             style={{ background: "rgba(0,0,0,0.3)", color: "#3889FF" }}
@@ -288,9 +283,7 @@ function PendingAgentCard({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-white truncate">
             <span>{label}</span>
-            <span className="text-muted-foreground font-normal">
-              .{parentLabel}.humanens.eth
-            </span>
+            <span className="text-muted-foreground font-normal">.{parentLabel}.humanens.eth</span>
           </p>
           <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
             {address.slice(0, 6)}...{address.slice(-4)}
@@ -526,7 +519,9 @@ function ManageFlow() {
           </button>
         </div>
       ) : isLoadingLabels ? (
-        <p className="text-sm text-muted-foreground animate-pulse text-center">Loading your names...</p>
+        <p className="text-sm text-muted-foreground animate-pulse text-center">
+          Loading your names...
+        </p>
       ) : labels.length === 0 ? (
         <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4">
           <p className="text-sm text-muted-foreground text-center">
@@ -554,7 +549,9 @@ function ManageFlow() {
                 }}
               >
                 {labels.map((l) => (
-                  <option key={l} value={l}>{l}.humanens.eth</option>
+                  <option key={l} value={l}>
+                    {l}.humanens.eth
+                  </option>
                 ))}
               </select>
             </div>
@@ -580,7 +577,8 @@ function ManageFlow() {
               Active Agents
               {!isLoading && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({agents.length}{pendingAgent && createStatus !== "error" ? " + 1" : ""})
+                  ({agents.length}
+                  {pendingAgent && createStatus !== "error" ? " + 1" : ""})
                 </span>
               )}
             </h2>

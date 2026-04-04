@@ -53,7 +53,10 @@ export function useRegisterLink() {
         attestationData: `0x${string}`;
       };
 
-      console.log("[claim] Step 1 done, got attestationData:", attestationData.slice(0, 20) + "...");
+      console.log(
+        "[claim] Step 1 done, got attestationData:",
+        attestationData.slice(0, 20) + "...",
+      );
 
       // Step 2: CCIP-Read orchestration
       setStatus("ccip");
