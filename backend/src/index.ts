@@ -72,7 +72,10 @@ app.use((_req, res, next) => {
 
 app.post("/api/rp-signature", async (req, res) => {
   try {
-    const { sig, nonce, createdAt, expiresAt } = signRequest({ signingKeyHex: RP_SIGNING_KEY, action: WORLD_ID_ACTION });
+    const { sig, nonce, createdAt, expiresAt } = signRequest({
+      signingKeyHex: RP_SIGNING_KEY,
+      action: WORLD_ID_ACTION,
+    });
 
     res.json({
       sig,
