@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
 import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
@@ -13,6 +13,7 @@ import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 import { ERC8004_CHAINS, buildENSIP25Key } from "@/lib/erc7930";
 import { useAgentBookRegister } from "@/hooks/use-agentbook";
 import { type Agent } from "@/hooks/use-agents";
+import { useMyLabels } from "@/hooks/use-my-labels";
 
 // ---- Revoke hook (inline, similar to create) ----
 type RevokeStatus = "idle" | "attesting" | "sending" | "confirming" | "success" | "error";
@@ -265,8 +266,9 @@ function AgentCard({
 
 // ---- Manage flow ----
 function ManageFlow() {
-  const [parentLabel, setParentLabel] = useState("");
-  const [submittedLabel, setSubmittedLabel] = useState("");
+  const { labels, isLoading: isLoadingLabels, saveNullifier, needsVerify } = useMyLabels();
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const submittedLabel = selectedLabel || labels[0] || "";
 
   const [agentLabel, setAgentLabel] = useState("");
   const [agentAddress, setAgentAddress] = useState("");
@@ -285,10 +287,12 @@ function ManageFlow() {
     rpContext: createRpContext,
     isLoadingRp: isLoadingCreateRp,
     fetchRpContext: fetchCreateRpContext,
+    verifyNullifier,
     appId,
     action,
   } = useIdkitVerify();
   const [createIdkitOpen, setCreateIdkitOpen] = useState(false);
+  const [identifyIdkitOpen, setIdentifyIdkitOpen] = useState(false);
 
   const isCreating =
     createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
@@ -298,6 +302,27 @@ function ManageFlow() {
     sending: "Confirm in World App...",
     confirming: "Confirming transaction...",
   };
+
+  // Auto-select first label when labels load
+  useEffect(() => {
+    if (labels.length > 0 && !selectedLabel) {
+      setSelectedLabel(labels[0]);
+    }
+  }, [labels, selectedLabel]);
+
+  async function handleIdentify() {
+    await fetchCreateRpContext();
+    setIdentifyIdkitOpen(true);
+  }
+
+  async function handleIdentifySuccess(result: unknown) {
+    try {
+      const hash = await verifyNullifier(result);
+      saveNullifier(hash);
+    } catch (e) {
+      console.error("Failed to verify identity:", e);
+    }
+  }
 
   async function handleCreate() {
     await fetchCreateRpContext();
@@ -325,11 +350,6 @@ function ManageFlow() {
     }
   }
 
-  function handleLookup() {
-    setSubmittedLabel(parentLabel.trim().toLowerCase());
-    setRefreshKey((k) => k + 1);
-  }
-
   const isAddressValid = /^0x[0-9a-fA-F]{40}$/.test(agentAddress);
   const canCreate = submittedLabel && agentLabel.trim() && isAddressValid && !isCreating;
 
@@ -342,52 +362,75 @@ function ManageFlow() {
         </p>
       </div>
 
-      {/* Parent label lookup */}
-      <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-3">
-        <label
-          className="block text-[11px] uppercase tracking-[0.5px]"
-          style={{ color: "rgba(255,255,255,0.35)" }}
-        >
-          Your HumanENS label
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            placeholder="alice"
-            value={parentLabel}
-            onChange={(e) => setParentLabel(e.target.value.toLowerCase())}
-            className="flex-1 h-10 rounded-lg px-4 text-sm text-white outline-none transition-all"
+      {/* Identity verification */}
+      {needsVerify ? (
+        <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-3">
+          <p className="text-sm text-muted-foreground text-center">
+            Verify your World ID to load your HumanENS names
+          </p>
+          <button
+            onClick={handleIdentify}
+            disabled={isLoadingCreateRp}
+            className={cn(
+              "btn-glow w-full h-10 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01]",
+              isLoadingCreateRp && "opacity-40 cursor-not-allowed hover:scale-100",
+            )}
             style={{
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.05)",
+              background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
             }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "rgba(110,231,183,0.3)";
-              e.currentTarget.style.boxShadow = "0 0 0 2px rgba(110,231,183,0.08)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          />
-          <span className="text-sm text-muted-foreground shrink-0">.humanens.eth</span>
+          >
+            {isLoadingCreateRp ? "Loading..." : "Verify Identity"}
+          </button>
         </div>
-        <button
-          onClick={handleLookup}
-          disabled={!parentLabel.trim()}
-          className={cn(
-            "w-full h-10 rounded-full text-sm font-medium text-muted-foreground transition-all",
-            parentLabel.trim()
-              ? "hover:text-foreground hover:scale-[1.005]"
-              : "opacity-40 cursor-not-allowed",
+      ) : isLoadingLabels ? (
+        <p className="text-sm text-muted-foreground animate-pulse text-center">Loading your names...</p>
+      ) : labels.length === 0 ? (
+        <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4">
+          <p className="text-sm text-muted-foreground text-center">
+            No HumanENS names found. Register one first at /app/claim.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Label selector (if multiple) */}
+          {labels.length > 1 && (
+            <div className="glass-card animate-fade-in-up delay-100 rounded-xl px-4 py-4 space-y-2">
+              <label
+                className="block text-[11px] uppercase tracking-[0.5px]"
+                style={{ color: "rgba(255,255,255,0.35)" }}
+              >
+                Your HumanENS name
+              </label>
+              <select
+                value={selectedLabel}
+                onChange={(e) => setSelectedLabel(e.target.value)}
+                className="w-full h-10 rounded-lg px-3 text-sm text-white outline-none"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.05)",
+                }}
+              >
+                {labels.map((l) => (
+                  <option key={l} value={l}>{l}.humanens.eth</option>
+                ))}
+              </select>
+            </div>
           )}
-          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
-        >
-          Load Agents
-        </button>
-      </div>
+
+          {/* Show current label */}
+          {labels.length === 1 && (
+            <div className="animate-fade-in-up delay-100">
+              <p className="text-sm text-muted-foreground">
+                Managing agents for{" "}
+                <span className="text-white font-medium">{submittedLabel}.humanens.eth</span>
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Agent list */}
-      {submittedLabel && (
+      {submittedLabel && !needsVerify && (
         <>
           <div className="animate-fade-in">
             <h2 className="text-base font-semibold text-white mb-3">
@@ -578,17 +621,30 @@ function ManageFlow() {
       )}
 
       {createRpContext && (
-        <IDKitRequestWidget
-          open={createIdkitOpen}
-          onOpenChange={setCreateIdkitOpen}
-          app_id={appId as `app_${string}`}
-          action={action}
-          rp_context={createRpContext}
-          allow_legacy_proofs={true}
-          preset={deviceLegacy()}
-          onSuccess={handleCreateIdkitSuccess}
-          onError={(code) => console.error("IDKit error", code)}
-        />
+        <>
+          <IDKitRequestWidget
+            open={identifyIdkitOpen}
+            onOpenChange={setIdentifyIdkitOpen}
+            app_id={appId as `app_${string}`}
+            action={action}
+            rp_context={createRpContext}
+            allow_legacy_proofs={true}
+            preset={deviceLegacy()}
+            onSuccess={handleIdentifySuccess}
+            onError={(code) => console.error("IDKit identify error", code)}
+          />
+          <IDKitRequestWidget
+            open={createIdkitOpen}
+            onOpenChange={setCreateIdkitOpen}
+            app_id={appId as `app_${string}`}
+            action={action}
+            rp_context={createRpContext}
+            allow_legacy_proofs={true}
+            preset={deviceLegacy()}
+            onSuccess={handleCreateIdkitSuccess}
+            onError={(code) => console.error("IDKit error", code)}
+          />
+        </>
       )}
     </main>
   );

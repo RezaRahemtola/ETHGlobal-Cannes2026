@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { createPublicClient, http, parseAbi } from "viem";
+import { MiniKit } from "@worldcoin/minikit-js";
 
 const AGENTBOOK_ADDRESS = "0xA23aB2712eA7BBa896930544C7d6636a96b944dA" as const;
-const AGENTBOOK_RELAY = "https://x402-worldchain.vercel.app/register";
 
 const worldchain = {
   id: 480 as const,
@@ -53,6 +53,8 @@ export function useAgentBookRegister() {
     setError(null);
 
     try {
+      console.log("[agentbook] Starting registration for", agentAddress);
+
       // Get next nonce from AgentBook contract
       const nonce = await client.readContract({
         address: AGENTBOOK_ADDRESS,
@@ -61,40 +63,76 @@ export function useAgentBookRegister() {
         args: [agentAddress],
       });
 
-      // Build World ID verification request
-      const { MiniKit } = await import("@worldcoin/minikit-js");
+      console.log("[agentbook] Nonce:", nonce.toString());
 
+      // World ID verification via MiniKit
       const verifyPayload = {
         action: "agentbook-registration",
         signal: agentAddress,
       };
 
-      const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
+      console.log("[agentbook] Verifying with World ID...", verifyPayload);
+      const { finalPayload: verifyResult } = await MiniKit.commandsAsync.verify(verifyPayload);
+      console.log("[agentbook] Verify response:", JSON.stringify(verifyResult));
 
-      if (finalPayload.status !== "success") {
+      if (verifyResult.status !== "success") {
         throw new Error("World ID verification failed");
       }
 
       setStatus("submitting");
+      console.log("[agentbook] Sending register tx...");
 
-      // Submit to AgentKit relay (gasless)
-      const relayResponse = await fetch(AGENTBOOK_RELAY, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          agentAddress,
-          nonce: nonce.toString(),
-          proof: finalPayload,
-        }),
+      // Extract proof fields from verify result
+      const vr = verifyResult as unknown as {
+        merkle_root: string;
+        nullifier_hash: string;
+        proof: string;
+      };
+      const proofChunks = Array.from({ length: 8 }, (_, i) =>
+        BigInt("0x" + vr.proof.slice(2 + i * 64, 2 + (i + 1) * 64))
+      );
+
+      // Call AgentBook.register() directly via MiniKit
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: AGENTBOOK_ADDRESS,
+            abi: [
+              {
+                type: "function",
+                name: "register",
+                inputs: [
+                  { name: "agent", type: "address" },
+                  { name: "root", type: "uint256" },
+                  { name: "nonce", type: "uint256" },
+                  { name: "nullifierHash", type: "uint256" },
+                  { name: "proof", type: "uint256[8]" },
+                ],
+                outputs: [],
+                stateMutability: "nonpayable",
+              },
+            ],
+            functionName: "register",
+            args: [
+              agentAddress,
+              BigInt(vr.merkle_root),
+              nonce,
+              BigInt(vr.nullifier_hash),
+              proofChunks,
+            ],
+          },
+        ],
       });
 
-      if (!relayResponse.ok) {
-        const errData = await relayResponse.json().catch(() => ({}));
-        throw new Error(errData.error || "AgentBook relay submission failed");
+      console.log("[agentbook] Tx response:", JSON.stringify(finalPayload));
+
+      if (finalPayload.status !== "success") {
+        throw new Error("AgentBook registration transaction failed");
       }
 
       setStatus("success");
     } catch (e) {
+      console.error("[agentbook] Error:", e);
       setError(e instanceof Error ? e.message : "Failed to register in AgentBook");
       setStatus("error");
     }
