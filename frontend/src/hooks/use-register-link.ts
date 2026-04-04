@@ -29,8 +29,10 @@ export function useRegisterLink() {
     try {
       const sourceName = `${args.label}.eth`;
       const sourceNode = namehash(sourceName) as `0x${string}`;
+      console.log("[claim] sourceName:", sourceName, "sourceNode:", sourceNode);
 
       // Step 1: Get backend attestation
+      console.log("[claim] Step 1: fetching backend attestation...");
       const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-attest`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -51,8 +53,11 @@ export function useRegisterLink() {
         attestationData: `0x${string}`;
       };
 
+      console.log("[claim] Step 1 done, got attestationData:", attestationData.slice(0, 20) + "...");
+
       // Step 2: CCIP-Read orchestration
       setStatus("ccip");
+      console.log("[claim] Step 2: CCIP-Read...");
 
       const [response, extraData] = await buildRegisterLinkCallbackArgs({
         label: args.label,
@@ -61,8 +66,12 @@ export function useRegisterLink() {
         attestationData,
       });
 
+      console.log("[claim] Step 2 done, response:", response.slice(0, 20) + "...");
+      console.log("[claim] extraData:", extraData.slice(0, 20) + "...");
+
       // Step 3: Send via MiniKit
       setStatus("sending");
+      console.log("[claim] Step 3: sending tx to", HUMANENS_LINKER_ADDRESS);
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
@@ -75,6 +84,7 @@ export function useRegisterLink() {
         ],
       });
 
+      console.log("[claim] MiniKit response:", JSON.stringify(finalPayload));
       if (finalPayload.status !== "success") {
         const msg =
           (finalPayload as Record<string, unknown>).error_code ||
@@ -107,6 +117,7 @@ export function useRegisterLink() {
 
       setStatus("success");
     } catch (e) {
+      console.error("[claim] Error:", e);
       setError(e instanceof Error ? e.message : "Registration failed");
       setStatus("error");
     }
