@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
+import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
 import { useRegisterLink } from "@/hooks/use-register-link";
@@ -217,11 +217,13 @@ function RegisterFlow() {
           action={action}
           rp_context={rpContext}
           allow_legacy_proofs={true}
-          preset={orbLegacy()}
+          preset={deviceLegacy()}
           onSuccess={(result) => {
             if (!label) return;
             // Check nullifier matches the text record before proceeding
-            const res = result as { responses?: { nullifier?: string }[] };
+            const res = result as {
+              responses?: { nullifier?: string; identifier?: string }[];
+            };
             const nullifier = res.responses?.[0]?.nullifier;
             if (recordValue && nullifier && recordValue !== nullifier) {
               setNullifierError(
@@ -231,7 +233,8 @@ function RegisterFlow() {
               return;
             }
             setNullifierError(null);
-            register({ label, idkitResult: result });
+            const level = res.responses?.[0]?.identifier ?? "orb";
+            register({ label, idkitResult: result, level });
           }}
           onError={(code) => console.error("IDKit error", code)}
         />

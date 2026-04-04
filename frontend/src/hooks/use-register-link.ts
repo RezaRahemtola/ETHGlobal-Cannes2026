@@ -22,7 +22,7 @@ export function useRegisterLink() {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  async function register(args: { label: string; idkitResult: unknown }) {
+  async function register(args: { label: string; idkitResult: unknown; level: string }) {
     setStatus("attesting");
     setError(null);
 
@@ -37,6 +37,7 @@ export function useRegisterLink() {
         body: JSON.stringify({
           label: args.label,
           sourceNode,
+          level: args.level,
           idkitResult: args.idkitResult,
         }),
       });

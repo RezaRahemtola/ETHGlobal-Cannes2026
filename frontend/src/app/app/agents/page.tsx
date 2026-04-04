@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
-import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
+import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { useAgents } from "@/hooks/use-agents";
 import { useCreateAgent } from "@/hooks/use-create-agent";
@@ -201,7 +201,7 @@ function AgentCard({
           action={action}
           rp_context={rpContext}
           allow_legacy_proofs={true}
-          preset={orbLegacy()}
+          preset={deviceLegacy()}
           onSuccess={handleIdkitSuccess}
           onError={(code) => console.error("IDKit error", code)}
         />
@@ -482,7 +482,7 @@ function ManageFlow() {
           action={action}
           rp_context={createRpContext}
           allow_legacy_proofs={true}
-          preset={orbLegacy()}
+          preset={deviceLegacy()}
           onSuccess={handleCreateIdkitSuccess}
           onError={(code) => console.error("IDKit error", code)}
         />

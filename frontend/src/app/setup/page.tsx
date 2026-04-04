@@ -6,7 +6,7 @@ import { useEnsNames } from "@/hooks/use-ens-names";
 import { useIdkitVerify } from "@/hooks/use-idkit-verify";
 import { useSetTextRecord } from "@/hooks/use-set-text-record";
 import { cn } from "@/lib/utils";
-import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
+import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -185,7 +185,7 @@ export default function LinkPage() {
           action={action}
           rp_context={rpContext}
           allow_legacy_proofs={true}
-          preset={orbLegacy()}
+          preset={deviceLegacy()}
           onSuccess={async (result) => {
             await verifyNullifier(result);
           }}

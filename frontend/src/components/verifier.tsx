@@ -71,14 +71,27 @@ export function Verifier() {
             </span>
             {result.isVerified ? (
               <span
-                className="verified-glow rounded-full px-3 py-1 text-[11px] font-semibold"
+                className={result.worldIdLevel === "orb" ? "verified-glow" : ""}
                 style={{
-                  background: "rgba(110,231,183,0.12)",
-                  color: "#6EE7B7",
-                  border: "1px solid rgba(110,231,183,0.2)",
+                  display: "inline-block",
+                  borderRadius: "9999px",
+                  padding: "2px 12px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  background:
+                    result.worldIdLevel === "orb"
+                      ? "rgba(110,231,183,0.12)"
+                      : "rgba(56,137,255,0.12)",
+                  color: result.worldIdLevel === "orb" ? "#6EE7B7" : "#3889FF",
+                  border: `1px solid ${result.worldIdLevel === "orb" ? "rgba(110,231,183,0.2)" : "rgba(56,137,255,0.2)"}`,
                 }}
               >
-                &#x2713; Verified Human
+                &#x2713;{" "}
+                {result.worldIdLevel === "orb"
+                  ? "Verified Human"
+                  : result.worldIdLevel === "secure-document" || result.worldIdLevel === "document"
+                    ? "Verified"
+                    : "Registered"}
               </span>
             ) : (
               <span

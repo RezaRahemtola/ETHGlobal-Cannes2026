@@ -8,7 +8,6 @@ export interface VerificationResult {
   humanensSubname: string | null;
   isVerified: boolean;
   worldIdLevel: string | null;
-  sourceName: string | null;
   reverseRecordValid: boolean;
 }
 
@@ -26,21 +25,19 @@ export function useVerifyName() {
       const label = name.replace(/\.eth$/, "");
       const subname = `${label}.humanens.eth`;
 
-      const [verified, level, source] = await Promise.all([
-        getEnsTextRecord(subname, "world-id-verified").catch(() => null),
+      const [level, reverseRecord] = await Promise.all([
         getEnsTextRecord(subname, "world-id-level").catch(() => null),
-        getEnsTextRecord(subname, "source-name").catch(() => null),
+        getEnsTextRecord(`${label}.eth`, "humanens").catch(() => null),
       ]);
 
-      const reverseRecord = await getEnsTextRecord(`${label}.eth`, "humanens").catch(() => null);
-      const reverseValid = reverseRecord === subname;
+      const reverseValid = !!reverseRecord;
+      const subnameExists = !!level;
 
       setResult({
         name: `${label}.eth`,
-        humanensSubname: verified ? subname : null,
-        isVerified: verified === "true" && reverseValid,
+        humanensSubname: subnameExists ? subname : null,
+        isVerified: subnameExists && reverseValid,
         worldIdLevel: level,
-        sourceName: source,
         reverseRecordValid: reverseValid,
       });
     } catch (e) {
