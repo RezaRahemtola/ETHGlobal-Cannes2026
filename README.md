@@ -1,6 +1,6 @@
 # HumanENS
 
-Seen by the Orb, known by your name - World ID biometrics meet ENS naming. Prove you're human on-chain, protect your name, give your AI agents identity.
+<img width="2178" height="1976" alt="image" src="https://github.com/user-attachments/assets/e7e8b5dc-b66b-4fc3-81be-b14c888e8ad9" />
 
 ## Problem
 
