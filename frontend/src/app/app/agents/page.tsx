@@ -110,7 +110,6 @@ function AgentCard({
     registerAgent: registerAgentBook,
     status: abStatus,
     error: abError,
-    reset: abReset,
   } = useAgentBookRegister();
 
   const isAbBusy = abStatus !== "idle" && abStatus !== "success" && abStatus !== "error";

@@ -70,7 +70,7 @@ export function useAgents(parentLabel: string) {
             let agentBookRegistered = false;
             try {
               const humanId = await lookupAgentBook(addr);
-              agentBookRegistered = humanId !== 0n;
+              agentBookRegistered = humanId !== BigInt(0);
             } catch {
               // AgentBook lookup failed, assume not registered
             }
