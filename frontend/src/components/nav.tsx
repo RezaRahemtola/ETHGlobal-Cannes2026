@@ -43,7 +43,9 @@ export function Nav() {
         </Link>
         <div className="flex gap-6 text-[13px]">
           {links.map(({ href, label }) => {
-            const isActive = pathname === href;
+            const normPath = pathname.replace(/\/+$/, "") || "/";
+            const isActive = normPath === href;
+            const isHome = href === "/" || href === "/app";
             return (
               <Link
                 key={href}
@@ -53,6 +55,7 @@ export function Nav() {
                   isActive
                     ? "font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground",
+                  isHome && "hidden sm:inline",
                 )}
               >
                 {label}
