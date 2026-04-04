@@ -320,6 +320,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     string calldata parentLabel,
     string calldata agentLabel,
     address agentAddress,
+    string calldata ensip25Key,
     bytes32 nullifierHash,
     uint256 timestamp,
     bytes calldata sig
@@ -333,6 +334,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
           parentLabel,
           agentLabel,
           agentAddress,
+          ensip25Key,
           timestamp
         )
       );
@@ -364,6 +366,10 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     registry.createSubnode(parentNode, agentLabel, address(this), new bytes[](0));
     registry.setAddr(agentNode, agentAddress);
+
+    if (bytes(ensip25Key).length > 0) {
+      registry.setText(agentNode, ensip25Key, "1");
+    }
 
     emit AgentCreated(parentLabel, agentLabel, agentAddress);
   }

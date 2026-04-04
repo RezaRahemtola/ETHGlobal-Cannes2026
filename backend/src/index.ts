@@ -219,23 +219,25 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
  */
 app.post("/api/verify-and-sign-agent", async (req, res) => {
   try {
-    const { idkitResult, parentLabel, agentLabel, agentAddress } = req.body;
+    const { idkitResult, parentLabel, agentLabel, agentAddress, ensip25Key } = req.body;
     if (!idkitResult || !parentLabel || !agentLabel || !agentAddress) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
     const { nullifierHash } = await verifyWorldId(idkitResult);
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
+    const key = ensip25Key || "";
 
     const hash = keccak256(
       encodePacked(
-        ["string", "bytes32", "string", "string", "address", "uint256"],
+        ["string", "bytes32", "string", "string", "address", "string", "uint256"],
         [
           "createAgent",
           nullifierHash as Hex,
           parentLabel,
           agentLabel,
           agentAddress as Hex,
+          key,
           timestamp,
         ],
       ),
