@@ -10,6 +10,9 @@ import { useIdkitVerify } from "@/hooks/use-idkit-verify";
 import { cn } from "@/lib/utils";
 import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
+import { ERC8004_CHAINS, buildENSIP25Key } from "@/lib/erc7930";
+import { useAgentBookRegister } from "@/hooks/use-agentbook";
+import { type Agent } from "@/hooks/use-agents";
 
 // ---- Revoke hook (inline, similar to create) ----
 type RevokeStatus = "idle" | "attesting" | "sending" | "confirming" | "success" | "error";
@@ -95,12 +98,27 @@ function useRevokeAgent() {
 function AgentCard({
   agent,
   onRevoked,
+  onRefresh,
 }: {
-  agent: { parentLabel: string; agentLabel: string; agentAddress: string; fullName: string };
+  agent: Agent;
   onRevoked: () => void;
+  onRefresh: () => void;
 }) {
   const { revokeAgent, status, error, reset } = useRevokeAgent();
   const { rpContext, isLoadingRp, fetchRpContext, appId, action } = useIdkitVerify();
+  const {
+    registerAgent: registerAgentBook,
+    status: abStatus,
+    error: abError,
+    reset: abReset,
+  } = useAgentBookRegister();
+
+  const isAbBusy = abStatus !== "idle" && abStatus !== "success" && abStatus !== "error";
+
+  async function handleAgentBookRegister() {
+    await registerAgentBook(agent.agentAddress as `0x${string}`);
+    onRefresh();
+  }
   const [idkitOpen, setIdkitOpen] = useState(false);
 
   const isBusy = status !== "idle" && status !== "success" && status !== "error";
@@ -164,6 +182,29 @@ function AgentCard({
         </span>
       </div>
 
+      {/* Status badges */}
+      <div className="flex gap-1.5 flex-wrap">
+        {agent.agentBookRegistered ? (
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: "rgba(56,137,255,0.1)", color: "#3889FF", border: "1px solid rgba(56,137,255,0.2)" }}>
+            AgentBook
+          </span>
+        ) : (
+          <button
+            onClick={handleAgentBookRegister}
+            disabled={isAbBusy}
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium transition-all hover:scale-105"
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px dashed rgba(255,255,255,0.15)" }}>
+            {isAbBusy ? "Registering..." : "+ AgentBook"}
+          </button>
+        )}
+      </div>
+
+      {abStatus === "success" && (
+        <p className="text-xs" style={{ color: "#6EE7B7" }}>Registered in AgentBook!</p>
+      )}
+      {abError && <p className="text-xs text-destructive">{abError}</p>}
+
       {isBusy && (
         <p className="text-xs text-muted-foreground animate-pulse">{statusLabel[status]}</p>
       )}
@@ -217,6 +258,8 @@ function ManageFlow() {
 
   const [agentLabel, setAgentLabel] = useState("");
   const [agentAddress, setAgentAddress] = useState("");
+  const [erc8004Chain, setErc8004Chain] = useState<number | null>(null);
+  const [erc8004AgentId, setErc8004AgentId] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { agents, isLoading } = useAgents(submittedLabel);
@@ -251,14 +294,22 @@ function ManageFlow() {
 
   function handleCreateIdkitSuccess(result: unknown) {
     if (submittedLabel && agentLabel && agentAddress) {
+      const ensip25Key =
+        erc8004Chain && erc8004AgentId
+          ? buildENSIP25Key(erc8004Chain, erc8004AgentId)
+          : undefined;
+
       createAgent({
         parentLabel: submittedLabel,
         agentLabel,
         agentAddress: agentAddress as `0x${string}`,
         idkitResult: result,
+        ensip25Key,
       }).then(() => {
         setAgentLabel("");
         setAgentAddress("");
+        setErc8004Chain(null);
+        setErc8004AgentId("");
         setRefreshKey((k) => k + 1);
       });
     }
@@ -353,6 +404,7 @@ function ManageFlow() {
                     key={`${agent.parentLabel}:${agent.agentLabel}`}
                     agent={agent}
                     onRevoked={() => setRefreshKey((k) => k + 1)}
+                    onRefresh={() => setRefreshKey((k) => k + 1)}
                   />
                 ))}
               </div>
@@ -428,6 +480,47 @@ function ManageFlow() {
                 {agentAddress && !isAddressValid && (
                   <p className="text-xs text-destructive mt-1">Invalid address</p>
                 )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  className="block text-[11px] uppercase tracking-[0.5px]"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
+                >
+                  ERC-8004 Registration (optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={erc8004Chain ?? ""}
+                    onChange={(e) =>
+                      setErc8004Chain(e.target.value ? Number(e.target.value) : null)
+                    }
+                    disabled={isCreating}
+                    className="flex-1 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all disabled:opacity-50"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.05)",
+                    }}
+                  >
+                    <option value="">No ERC-8004</option>
+                    {ERC8004_CHAINS.map((chain) => (
+                      <option key={chain.id} value={chain.id}>
+                        {chain.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    placeholder="Agent ID"
+                    value={erc8004AgentId}
+                    onChange={(e) => setErc8004AgentId(e.target.value)}
+                    disabled={isCreating || !erc8004Chain}
+                    className="w-24 h-10 rounded-lg px-3 text-sm text-white outline-none transition-all disabled:opacity-50"
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.05)",
+                    }}
+                  />
+                </div>
               </div>
 
               {isCreating && (
