@@ -38,10 +38,10 @@ contract HumanENSLinker is Ownable {
 
   /// @dev World ID nullifier → namehash of the source ENS name (e.g. namehash("alice.eth"))
   mapping(bytes32 => bytes32) public nullifierToSourceNode;
-  /// @dev World ID nullifier → address that registered the link
-  mapping(bytes32 => address) public nullifierToRegistrant;
   /// @dev Reverse: source namehash → nullifier (enforces 1:1 mapping)
   mapping(bytes32 => bytes32) public sourceNodeToNullifier;
+  /// @dev source namehash → L1 ENS owner address at time of registration
+  mapping(bytes32 => address) public sourceNodeToEnsOwner;
   /// @dev Agent subname node → parent's nullifier (for ownership checks)
   mapping(bytes32 => bytes32) public agentToParentNullifier;
   /// @dev Nullifier → list of agent subname nodes (for cleanup on link revoke/challenge)
@@ -54,7 +54,7 @@ contract HumanENSLinker is Ownable {
 
   // ─── Events ──────────────────────────────────────────────────────────
 
-  event LinkRegistered(string label, bytes32 sourceNode, bytes32 nullifierHash, address registrant);
+  event LinkRegistered(string label, bytes32 sourceNode, bytes32 nullifierHash, address ensOwner);
   event LinkRevoked(string label, bytes32 sourceNode);
   event LinkChallenged(string label, bytes32 sourceNode, address challenger);
   event AgentCreated(string parentLabel, string agentLabel, address agentAddress);
@@ -100,7 +100,7 @@ contract HumanENSLinker is Ownable {
       _urls(),
       abi.encode(sourceNode, "humanens", sourceName),
       this.registerLinkCallback.selector,
-      abi.encode(msg.sender, label, sourceNode, sourceName, attestationData)
+      abi.encode(label, sourceNode, sourceName, attestationData)
     );
   }
 
@@ -109,17 +109,17 @@ contract HumanENSLinker is Ownable {
   ///         the subname on the L2 registry.
   /// @dev Security: callable by anyone, but both signature checks + uniqueness checks prevent abuse.
   /// @param response ABI-encoded gateway proof: (sourceNode, textRecordValue, ensOwner, timestamp, sig)
-  /// @param extraData ABI-encoded original call context: (registrant, label, sourceNode, sourceName, attestationData)
+  /// @param extraData ABI-encoded original call context: (label, sourceNode, sourceName, attestationData)
   function registerLinkCallback(bytes calldata response, bytes calldata extraData) external {
     (
-      address registrant,
       string memory label,
       bytes32 sourceNode,
       string memory sourceName,
       bytes memory attestationData
-    ) = abi.decode(extraData, (address, string, bytes32, string, bytes));
+    ) = abi.decode(extraData, (string, bytes32, string, bytes));
 
     bytes32 nullifierHash;
+    address ensOwner;
 
     // Verify backend attestation (World ID)
     {
@@ -130,7 +130,7 @@ contract HumanENSLinker is Ownable {
       nullifierHash = _nul;
       require(block.timestamp <= attTimestamp + MAX_AGE, "Attestation expired");
       bytes32 attHash = keccak256(
-        abi.encodePacked("register", registrant, nullifierHash, sourceNode, label, attTimestamp)
+        abi.encodePacked("register", nullifierHash, sourceNode, label, attTimestamp)
       );
       require(_recover(attHash, attSig) == backendSigner, "Bad backend sig");
     }
@@ -140,10 +140,11 @@ contract HumanENSLinker is Ownable {
       (
         bytes32 proofSourceNode,
         string memory value,
-        address ensOwner,
+        address _ensOwner,
         uint256 proofTimestamp,
         bytes memory gatewaySig
       ) = abi.decode(response, (bytes32, string, address, uint256, bytes));
+      ensOwner = _ensOwner;
       require(block.timestamp <= proofTimestamp + MAX_AGE, "Proof expired");
       require(proofSourceNode == sourceNode, "SourceNode mismatch");
       // Text record stores the nullifier hex string — parse and verify it matches
@@ -161,26 +162,22 @@ contract HumanENSLinker is Ownable {
 
     // Store bidirectional mappings
     nullifierToSourceNode[nullifierHash] = sourceNode;
-    nullifierToRegistrant[nullifierHash] = registrant;
+    sourceNodeToEnsOwner[sourceNode] = ensOwner;
     sourceNodeToNullifier[sourceNode] = nullifierHash;
     labelHashToSourceNode[keccak256(bytes(label))] = sourceNode;
 
     // Mint subname on L2 registry
-    _mintSubname(label, sourceName, registrant);
+    _mintSubname(label, sourceName, ensOwner);
 
-    emit LinkRegistered(label, sourceNode, nullifierHash, registrant);
+    emit LinkRegistered(label, sourceNode, nullifierHash, ensOwner);
   }
 
   /// @dev Mints a subname on the L2 registry with verification metadata.
-  function _mintSubname(
-    string memory label,
-    string memory sourceName,
-    address registrant
-  ) internal {
+  function _mintSubname(string memory label, string memory sourceName, address ensOwner) internal {
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
     registry.createSubnode(baseNode, label, address(this), new bytes[](0));
-    registry.setAddr(node, registrant);
+    registry.setAddr(node, ensOwner);
     registry.setText(node, "world-id-verified", "true");
     registry.setText(node, "world-id-level", "orb");
     registry.setText(node, "source-name", sourceName);
@@ -203,12 +200,9 @@ contract HumanENSLinker is Ownable {
     bytes32 sourceNode = nullifierToSourceNode[nullifierHash];
     require(sourceNode != bytes32(0), "No link");
     require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "Label mismatch");
-    require(msg.sender == nullifierToRegistrant[nullifierHash], "Not registrant");
 
     require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
-    bytes32 h = keccak256(
-      abi.encodePacked("revoke", msg.sender, nullifierHash, sourceNode, label, timestamp)
-    );
+    bytes32 h = keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, timestamp));
     require(_recover(h, sig) == backendSigner, "Bad backend sig");
 
     _clearLink(nullifierHash, sourceNode, label);
@@ -287,7 +281,8 @@ contract HumanENSLinker is Ownable {
         }
         // If length != 66, nullifierValid stays false (record changed/cleared)
       }
-      require(!nullifierValid, "Link still valid");
+      bool ownerChanged = ensOwner != sourceNodeToEnsOwner[sourceNode];
+      require(!nullifierValid || ownerChanged, "Link still valid");
     }
 
     // Stale — clear state then burn (checks-effects-interactions)
@@ -321,7 +316,6 @@ contract HumanENSLinker is Ownable {
       bytes32 h = keccak256(
         abi.encodePacked(
           "createAgent",
-          msg.sender,
           nullifierHash,
           parentLabel,
           agentLabel,
@@ -331,7 +325,6 @@ contract HumanENSLinker is Ownable {
       );
       require(_recover(h, sig) == backendSigner, "Bad backend sig");
       require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
-      require(msg.sender == nullifierToRegistrant[nullifierHash], "Not registrant");
     }
 
     require(
@@ -379,7 +372,7 @@ contract HumanENSLinker is Ownable {
   ) external {
     require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
     bytes32 h = keccak256(
-      abi.encodePacked("revokeAgent", msg.sender, nullifierHash, parentLabel, agentLabel, timestamp)
+      abi.encodePacked("revokeAgent", nullifierHash, parentLabel, agentLabel, timestamp)
     );
     require(_recover(h, sig) == backendSigner, "Bad backend sig");
 
@@ -387,7 +380,6 @@ contract HumanENSLinker is Ownable {
     bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
     bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
     require(agentToParentNullifier[agentNode] == nullifierHash, "Not owner");
-    require(msg.sender == nullifierToRegistrant[nullifierHash], "Not registrant");
 
     delete agentToParentNullifier[agentNode];
     _removeAgentNode(nullifierHash, agentNode);
@@ -448,7 +440,7 @@ contract HumanENSLinker is Ownable {
     delete nullifierAgentNodes[nullifier];
 
     delete nullifierToSourceNode[nullifier];
-    delete nullifierToRegistrant[nullifier];
+    delete sourceNodeToEnsOwner[sourceNode];
     delete sourceNodeToNullifier[sourceNode];
     delete labelHashToSourceNode[keccak256(bytes(label))];
   }
