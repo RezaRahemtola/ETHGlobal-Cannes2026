@@ -167,7 +167,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       _clearLink(existingNullifier, sourceNode, label);
       bytes32 baseNode = registry.baseNode();
       bytes32 oldNode = registry.makeNode(baseNode, label);
-      registry.burn(uint256(oldNode));
+      registry.setAddr(oldNode, address(0));
     }
 
     // One link per World ID nullifier
@@ -220,7 +220,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
-    registry.burn(uint256(node));
+    registry.setAddr(node, address(0));
 
     emit LinkRevoked(label, sourceNode);
   }
@@ -299,7 +299,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     // Stale — clear state then burn (checks-effects-interactions)
     bytes32 nullifier = sourceNodeToNullifier[sourceNode];
     _clearLink(nullifier, sourceNode, label);
-    registry.burn(uint256(node));
+    registry.setAddr(node, address(0));
 
     emit LinkChallenged(label, sourceNode, challenger);
   }
@@ -355,9 +355,9 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       "exists"
     );
 
-    // Burn stale token if re-creating after parent revoke
+    // Clear stale token if re-creating after parent revoke
     if (existingNullifier != bytes32(0)) {
-      registry.burn(uint256(agentNode));
+      registry.setAddr(agentNode, address(0));
     }
 
     agentToParentNullifier[agentNode] = nullifierHash;
@@ -399,7 +399,8 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     delete agentToParentNullifier[agentNode];
     _removeAgentNode(nullifierHash, agentNode);
-    registry.burn(uint256(agentNode));
+    // Clear the address record so the subname no longer resolves
+    registry.setAddr(agentNode, address(0));
 
     emit AgentRevoked(parentLabel, agentLabel);
   }
@@ -446,11 +447,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     gatewayUrl = _url;
   }
 
-  /// @notice Admin burn — allows owner to burn any subname token on the registry.
-  function adminBurn(uint256 tokenId) external onlyOwner {
-    registry.burn(tokenId);
-  }
-
   // ─── Internal ────────────────────────────────────────────────────────
 
   /// @dev Accept ERC-721 safe transfers (required by L2 Registry's _safeMint).
@@ -490,7 +486,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     for (uint256 i = 0; i < agents.length; i++) {
       if (agentToParentNullifier[agents[i]] != bytes32(0)) {
         delete agentToParentNullifier[agents[i]];
-        registry.burn(uint256(agents[i]));
+        registry.setAddr(agents[i], address(0));
       }
     }
     delete nullifierAgentNodes[nullifier];
