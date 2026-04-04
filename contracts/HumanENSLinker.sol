@@ -405,6 +405,35 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     emit AgentRevoked(parentLabel, agentLabel);
   }
 
+  /// @notice Sets a text record on an agent subname. Only the parent's verified human can call.
+  function setAgentText(
+    string calldata parentLabel,
+    string calldata agentLabel,
+    string calldata key,
+    string calldata value,
+    bytes32 nullifierHash,
+    uint256 timestamp,
+    bytes calldata sig
+  ) external {
+    require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+    bytes32 h = keccak256(
+      abi.encodePacked("setAgentText", nullifierHash, parentLabel, agentLabel, key, value, timestamp)
+    );
+    require(_recover(h, sig) == backendSigner, "Bad backend sig");
+    require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
+    require(
+      labelHashToSourceNode[keccak256(bytes(parentLabel))] == nullifierToSourceNode[nullifierHash],
+      "Parent label mismatch"
+    );
+
+    bytes32 baseNode = registry.baseNode();
+    bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
+    bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
+    require(agentToParentNullifier[agentNode] == nullifierHash, "Not your agent");
+
+    registry.setText(agentNode, key, value);
+  }
+
   // ─── Admin ───────────────────────────────────────────────────────────
 
   /// @notice Update the backend signer address (for World ID attestations).

@@ -283,6 +283,44 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/verify-and-sign-set-agent-text
+ * Body: { idkitResult, parentLabel, agentLabel, key, value }
+ */
+app.post("/api/verify-and-sign-set-agent-text", async (req, res) => {
+  try {
+    const { idkitResult, parentLabel, agentLabel, key, value } = req.body;
+    if (!idkitResult || !parentLabel || !agentLabel || !key || value === undefined) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const { nullifierHash } = await verifyWorldId(idkitResult);
+    const timestamp = BigInt(Math.floor(Date.now() / 1000));
+
+    const hash = keccak256(
+      encodePacked(
+        ["string", "bytes32", "string", "string", "string", "string", "uint256"],
+        [
+          "setAgentText",
+          nullifierHash as Hex,
+          parentLabel,
+          agentLabel,
+          key,
+          value,
+          timestamp,
+        ],
+      ),
+    );
+    const signature = await account.signMessage({ message: { raw: hash } });
+
+    res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Set agent text signing error:", message);
+    res.status(400).json({ error: message });
+  }
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", signer: account.address, action: WORLD_ID_ACTION });
 });
