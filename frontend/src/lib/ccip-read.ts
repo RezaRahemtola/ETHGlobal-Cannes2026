@@ -46,6 +46,7 @@ export async function buildRegisterLinkCalldata(args: {
     await client.call({
       to: HUMANENS_LINKER_ADDRESS,
       data: callData,
+      ccipRead: false,
     });
     throw new Error("Expected OffchainLookup revert");
   } catch (err: unknown) {
@@ -119,6 +120,7 @@ export async function buildRegisterLinkCallbackArgs(args: {
     await client.call({
       to: HUMANENS_LINKER_ADDRESS,
       data: callData,
+      ccipRead: false,
     });
     throw new Error("Expected OffchainLookup revert");
   } catch (err: unknown) {
