@@ -31,14 +31,12 @@ export function useRegisterLink() {
       const sourceNode = namehash(sourceName) as `0x${string}`;
 
       // Step 1: Get backend attestation
-      const sender = MiniKit.user.walletAddress as `0x${string}`;
       const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-attest`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           label: args.label,
           sourceNode,
-          registrant: sender,
           idkitResult: args.idkitResult,
         }),
       });
@@ -60,7 +58,6 @@ export function useRegisterLink() {
         sourceName,
         sourceNode,
         attestationData,
-        sender,
       });
 
       // Step 3: Send via MiniKit

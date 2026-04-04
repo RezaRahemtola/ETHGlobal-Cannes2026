@@ -21,7 +21,6 @@ export function useCreateAgent() {
     setError(null);
 
     try {
-      const registrant = MiniKit.user.walletAddress as `0x${string}`;
       const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-sign-agent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -29,7 +28,6 @@ export function useCreateAgent() {
           parentLabel: args.parentLabel,
           agentLabel: args.agentLabel,
           agentAddress: args.agentAddress,
-          registrant,
           idkitResult: args.idkitResult,
         }),
       });

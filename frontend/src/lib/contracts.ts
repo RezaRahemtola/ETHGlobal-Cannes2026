@@ -101,7 +101,7 @@ export const humanENSLinkerABI = [
       { name: "label", type: "string", indexed: false },
       { name: "sourceNode", type: "bytes32", indexed: false },
       { name: "nullifierHash", type: "bytes32", indexed: false },
-      { name: "registrant", type: "address", indexed: false },
+      { name: "ensOwner", type: "address", indexed: false },
     ],
   },
   {

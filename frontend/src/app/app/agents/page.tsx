@@ -27,14 +27,12 @@ function useRevokeAgent() {
     setError(null);
 
     try {
-      const registrant = MiniKit.user.walletAddress as `0x${string}`;
       const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-sign-revoke-agent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           parentLabel: args.parentLabel,
           agentLabel: args.agentLabel,
-          registrant,
           idkitResult: args.idkitResult,
         }),
       });

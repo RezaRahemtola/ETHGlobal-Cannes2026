@@ -27,7 +27,6 @@ export async function buildRegisterLinkCalldata(args: {
   sourceName: string;
   sourceNode: Hex;
   attestationData: Hex;
-  sender: `0x${string}`;
 }): Promise<Hex> {
   // Step 1: Simulate to get OffchainLookup revert
   const callData = encodeFunctionData({
@@ -47,7 +46,6 @@ export async function buildRegisterLinkCalldata(args: {
     await client.call({
       to: HUMANENS_LINKER_ADDRESS,
       data: callData,
-      account: args.sender,
     });
     throw new Error("Expected OffchainLookup revert");
   } catch (err: unknown) {
@@ -103,7 +101,6 @@ export async function buildRegisterLinkCallbackArgs(args: {
   sourceName: string;
   sourceNode: Hex;
   attestationData: Hex;
-  sender: `0x${string}`;
 }): Promise<[Hex, Hex]> {
   const callData = encodeFunctionData({
     abi: humanENSLinkerABI,
@@ -122,7 +119,6 @@ export async function buildRegisterLinkCallbackArgs(args: {
     await client.call({
       to: HUMANENS_LINKER_ADDRESS,
       data: callData,
-      account: args.sender,
     });
     throw new Error("Expected OffchainLookup revert");
   } catch (err: unknown) {
