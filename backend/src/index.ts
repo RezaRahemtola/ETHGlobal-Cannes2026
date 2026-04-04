@@ -182,27 +182,27 @@ app.post("/api/verify-and-attest", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-revoke
- * Body: { idkitResult, sourceNode, label, level }
- * Hash: keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, level, timestamp))
+ * Body: { idkitResult, sourceNode, label }
+ * Hash: keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, timestamp))
+ * Note: no level — contract revokeLink does not include level in its hash
  */
 app.post("/api/verify-and-sign-revoke", async (req, res) => {
   try {
-    const { idkitResult, sourceNode, label, level } = req.body;
-    if (!idkitResult || !sourceNode || !label || !level) {
+    const { idkitResult, sourceNode, label } = req.body;
+    if (!idkitResult || !sourceNode || !label) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
     const { nullifierHash } = await verifyWorldId(idkitResult);
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
 
-    const signature = await signAttestation(
-      "revoke",
-      nullifierHash as Hex,
-      sourceNode as Hex,
-      label,
-      level,
-      timestamp,
+    const hash = keccak256(
+      encodePacked(
+        ["string", "bytes32", "bytes32", "string", "uint256"],
+        ["revoke", nullifierHash as Hex, sourceNode as Hex, label, timestamp],
+      ),
     );
+    const signature = await account.signMessage({ message: { raw: hash } });
 
     res.json({ nullifierHash, timestamp: timestamp.toString(), signature });
   } catch (err) {

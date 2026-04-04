@@ -159,8 +159,20 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       require(_recover(proofHash, gatewaySig) == gatewaySigner, "Bad gateway sig");
     }
 
-    // Uniqueness: one link per source ENS name, one link per World ID nullifier
-    require(sourceNodeToNullifier[sourceNode] == bytes32(0), "Link exists");
+    // If a link already exists for this source ENS name, auto-clear it if L1 owner changed
+    // This enables implicit transfers: new owner just claims, old link is cleared automatically
+    bytes32 existingNullifier = sourceNodeToNullifier[sourceNode];
+    if (existingNullifier != bytes32(0)) {
+      require(ensOwner != sourceNodeToEnsOwner[sourceNode], "Link exists (same owner)");
+      // Owner changed on L1 — clear the stale link
+      // Find old label from labelHashToSourceNode reverse lookup
+      _clearLink(existingNullifier, sourceNode, label);
+      bytes32 baseNode = registry.baseNode();
+      bytes32 oldNode = registry.makeNode(baseNode, label);
+      registry.burn(uint256(oldNode));
+    }
+
+    // One link per World ID nullifier
     require(nullifierToSourceNode[nullifierHash] == bytes32(0), "Nullifier used");
 
     // Store bidirectional mappings
