@@ -285,12 +285,13 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-set-agent-text
- * Body: { idkitResult, parentLabel, agentLabel, key, value }
+ * Body: { idkitResult, agentNode, key, value }
+ * Hash: keccak256(abi.encodePacked("setAgentText", nullifierHash, agentNode, key, value, timestamp))
  */
 app.post("/api/verify-and-sign-set-agent-text", async (req, res) => {
   try {
-    const { idkitResult, parentLabel, agentLabel, key, value } = req.body;
-    if (!idkitResult || !parentLabel || !agentLabel || !key || value === undefined) {
+    const { idkitResult, agentNode, key, value } = req.body;
+    if (!idkitResult || !agentNode || !key || value === undefined) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -299,8 +300,8 @@ app.post("/api/verify-and-sign-set-agent-text", async (req, res) => {
 
     const hash = keccak256(
       encodePacked(
-        ["string", "bytes32", "string", "string", "string", "string", "uint256"],
-        ["setAgentText", nullifierHash as Hex, parentLabel, agentLabel, key, value, timestamp],
+        ["string", "bytes32", "bytes32", "string", "string", "uint256"],
+        ["setAgentText", nullifierHash as Hex, agentNode as Hex, key, value, timestamp],
       ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });

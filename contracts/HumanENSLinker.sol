@@ -112,12 +112,10 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   /// @param response ABI-encoded gateway proof: (sourceNode, textRecordValue, ensOwner, timestamp, sig)
   /// @param extraData ABI-encoded original call context: (label, sourceNode, sourceName, attestationData)
   function registerLinkCallback(bytes calldata response, bytes calldata extraData) external {
-    (
-      string memory label,
-      bytes32 sourceNode,
-      string memory sourceName,
-      bytes memory attestationData
-    ) = abi.decode(extraData, (string, bytes32, string, bytes));
+    (string memory label, bytes32 sourceNode, , bytes memory attestationData) = abi.decode(
+      extraData,
+      (string, bytes32, string, bytes)
+    );
 
     bytes32 nullifierHash;
     address ensOwner;
@@ -131,11 +129,11 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       );
       nullifierHash = _nul;
       level = _level;
-      require(block.timestamp <= attTimestamp + MAX_AGE, "Attestation expired");
+      require(block.timestamp <= attTimestamp + MAX_AGE, "expired");
       bytes32 attHash = keccak256(
         abi.encodePacked("register", nullifierHash, sourceNode, label, level, attTimestamp)
       );
-      require(_recover(attHash, attSig) == backendSigner, "Bad backend sig");
+      require(_recover(attHash, attSig) == backendSigner, "bad sig");
     }
 
     // Verify gateway response (L1 ownership)
@@ -148,22 +146,22 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
         bytes memory gatewaySig
       ) = abi.decode(response, (bytes32, string, address, uint256, bytes));
       ensOwner = _ensOwner;
-      require(block.timestamp <= proofTimestamp + MAX_AGE, "Proof expired");
-      require(proofSourceNode == sourceNode, "SourceNode mismatch");
+      require(block.timestamp <= proofTimestamp + MAX_AGE, "expired");
+      require(proofSourceNode == sourceNode, "bad node");
       // Text record stores the nullifier hex string — parse and verify it matches
       bytes32 recordNullifier = _hexToBytes32(value);
-      require(recordNullifier == nullifierHash, "Nullifier mismatch");
+      require(recordNullifier == nullifierHash, "bad nul");
       bytes32 proofHash = keccak256(
         abi.encodePacked(proofSourceNode, value, ensOwner, proofTimestamp)
       );
-      require(_recover(proofHash, gatewaySig) == gatewaySigner, "Bad gateway sig");
+      require(_recover(proofHash, gatewaySig) == gatewaySigner, "bad gw sig");
     }
 
     // If a link already exists for this source ENS name, auto-clear it if L1 owner changed
     // This enables implicit transfers: new owner just claims, old link is cleared automatically
     bytes32 existingNullifier = sourceNodeToNullifier[sourceNode];
     if (existingNullifier != bytes32(0)) {
-      require(ensOwner != sourceNodeToEnsOwner[sourceNode], "Link exists (same owner)");
+      require(ensOwner != sourceNodeToEnsOwner[sourceNode], "exists");
       // Owner changed on L1 — clear the stale link
       // Find old label from labelHashToSourceNode reverse lookup
       _clearLink(existingNullifier, sourceNode, label);
@@ -173,7 +171,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     }
 
     // One link per World ID nullifier
-    require(nullifierToSourceNode[nullifierHash] == bytes32(0), "Nullifier used");
+    require(nullifierToSourceNode[nullifierHash] == bytes32(0), "used");
 
     // Store bidirectional mappings
     nullifierToSourceNode[nullifierHash] = sourceNode;
@@ -211,12 +209,12 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes calldata sig
   ) external {
     bytes32 sourceNode = nullifierToSourceNode[nullifierHash];
-    require(sourceNode != bytes32(0), "No link");
-    require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "Label mismatch");
+    require(sourceNode != bytes32(0), "no link");
+    require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "bad label");
 
-    require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+    require(block.timestamp <= timestamp + MAX_AGE, "expired");
     bytes32 h = keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, timestamp));
-    require(_recover(h, sig) == backendSigner, "Bad backend sig");
+    require(_recover(h, sig) == backendSigner, "bad sig");
 
     _clearLink(nullifierHash, sourceNode, label);
 
@@ -235,7 +233,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   /// @param sourceName The full L1 ENS name (for gateway to read current state)
   function challengeLink(string calldata label, string calldata sourceName) external view {
     bytes32 sourceNode = labelHashToSourceNode[keccak256(bytes(label))];
-    require(sourceNode != bytes32(0), "No link");
+    require(sourceNode != bytes32(0), "no link");
 
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
@@ -261,10 +259,10 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       (address, string, bytes32, bytes32)
     );
 
-    require(sourceNode != bytes32(0), "No link");
+    require(sourceNode != bytes32(0), "no link");
 
     // Re-derive node from label — don't trust extraData
-    require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "Label mismatch");
+    require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "bad label");
     bytes32 node = registry.makeNode(registry.baseNode(), label);
 
     // Verify gateway response + check validity
@@ -276,12 +274,12 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
         uint256 proofTimestamp,
         bytes memory gatewaySig
       ) = abi.decode(response, (bytes32, string, address, uint256, bytes));
-      require(block.timestamp <= proofTimestamp + MAX_AGE, "Proof expired");
-      require(proofSourceNode == sourceNode, "SourceNode mismatch");
+      require(block.timestamp <= proofTimestamp + MAX_AGE, "expired");
+      require(proofSourceNode == sourceNode, "bad node");
       bytes32 proofHash = keccak256(
         abi.encodePacked(proofSourceNode, value, ensOwner, proofTimestamp)
       );
-      require(_recover(proofHash, gatewaySig) == gatewaySigner, "Bad gateway sig");
+      require(_recover(proofHash, gatewaySig) == gatewaySigner, "bad gw sig");
 
       // Check if the L1 text record nullifier still matches the stored one
       bytes32 storedNullifier = sourceNodeToNullifier[sourceNode];
@@ -295,7 +293,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
         // If length != 66, nullifierValid stays false (record changed/cleared)
       }
       bool ownerChanged = ensOwner != sourceNodeToEnsOwner[sourceNode];
-      require(!nullifierValid || ownerChanged, "Link still valid");
+      require(!nullifierValid || ownerChanged, "valid");
     }
 
     // Stale — clear state then burn (checks-effects-interactions)
@@ -327,7 +325,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes calldata sig
   ) external {
     {
-      require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+      require(block.timestamp <= timestamp + MAX_AGE, "expired");
       bytes32 h = keccak256(
         abi.encodePacked(
           "createAgent",
@@ -339,13 +337,13 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
           timestamp
         )
       );
-      require(_recover(h, sig) == backendSigner, "Bad backend sig");
-      require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
+      require(_recover(h, sig) == backendSigner, "bad sig");
+      require(nullifierToSourceNode[nullifierHash] != bytes32(0), "no link");
     }
 
     require(
       labelHashToSourceNode[keccak256(bytes(parentLabel))] == nullifierToSourceNode[nullifierHash],
-      "Parent label mismatch"
+      "bad parent"
     );
 
     bytes32 baseNode = registry.baseNode();
@@ -354,7 +352,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes32 existingNullifier = agentToParentNullifier[agentNode];
     require(
       existingNullifier == bytes32(0) || nullifierToSourceNode[existingNullifier] == bytes32(0),
-      "Agent exists"
+      "exists"
     );
 
     // Burn stale token if re-creating after parent revoke
@@ -388,16 +386,16 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     uint256 timestamp,
     bytes calldata sig
   ) external {
-    require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+    require(block.timestamp <= timestamp + MAX_AGE, "expired");
     bytes32 h = keccak256(
       abi.encodePacked("revokeAgent", nullifierHash, parentLabel, agentLabel, timestamp)
     );
-    require(_recover(h, sig) == backendSigner, "Bad backend sig");
+    require(_recover(h, sig) == backendSigner, "bad sig");
 
     bytes32 baseNode = registry.baseNode();
     bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
     bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
-    require(agentToParentNullifier[agentNode] == nullifierHash, "Not owner");
+    require(agentToParentNullifier[agentNode] == nullifierHash, "denied");
 
     delete agentToParentNullifier[agentNode];
     _removeAgentNode(nullifierHash, agentNode);
@@ -407,38 +405,26 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   }
 
   /// @notice Sets a text record on an agent subname. Only the parent's verified human can call.
+  /// @param agentNode The namehash of the agent subname (caller computes this)
+  /// @param key The text record key
+  /// @param value The text record value
+  /// @param nullifierHash The parent's World ID nullifier
+  /// @param timestamp Backend attestation timestamp
+  /// @param sig Backend signature over ("setAgentText", nullifierHash, agentNode, key, value, timestamp)
   function setAgentText(
-    string calldata parentLabel,
-    string calldata agentLabel,
+    bytes32 agentNode,
     string calldata key,
     string calldata value,
     bytes32 nullifierHash,
     uint256 timestamp,
     bytes calldata sig
   ) external {
-    require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
+    require(block.timestamp <= timestamp + MAX_AGE, "expired");
     bytes32 h = keccak256(
-      abi.encodePacked(
-        "setAgentText",
-        nullifierHash,
-        parentLabel,
-        agentLabel,
-        key,
-        value,
-        timestamp
-      )
+      abi.encodePacked("setAgentText", nullifierHash, agentNode, key, value, timestamp)
     );
-    require(_recover(h, sig) == backendSigner, "Bad backend sig");
-    require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
-    require(
-      labelHashToSourceNode[keccak256(bytes(parentLabel))] == nullifierToSourceNode[nullifierHash],
-      "Parent label mismatch"
-    );
-
-    bytes32 baseNode = registry.baseNode();
-    bytes32 parentNode = registry.makeNode(baseNode, parentLabel);
-    bytes32 agentNode = registry.makeNode(parentNode, agentLabel);
-    require(agentToParentNullifier[agentNode] == nullifierHash, "Not your agent");
+    require(_recover(h, sig) == backendSigner, "bad sig");
+    require(agentToParentNullifier[agentNode] == nullifierHash, "denied");
 
     registry.setText(agentNode, key, value);
   }
@@ -460,6 +446,11 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     gatewayUrl = _url;
   }
 
+  /// @notice Admin burn — allows owner to burn any subname token on the registry.
+  function adminBurn(uint256 tokenId) external onlyOwner {
+    registry.burn(tokenId);
+  }
+
   // ─── Internal ────────────────────────────────────────────────────────
 
   /// @dev Accept ERC-721 safe transfers (required by L2 Registry's _safeMint).
@@ -477,13 +468,13 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     (bytes32 r, bytes32 s, uint8 v) = _splitSig(sig);
     address signer = ecrecover(ethHash, v, r, s);
-    require(signer != address(0), "Invalid sig");
+    require(signer != address(0), "sig");
     return signer;
   }
 
   /// @dev Splits a 65-byte signature into (r, s, v) components.
   function _splitSig(bytes memory sig) internal pure returns (bytes32 r, bytes32 s, uint8 v) {
-    require(sig.length == 65, "Bad sig len");
+    require(sig.length == 65, "sig");
     assembly {
       r := mload(add(sig, 32))
       s := mload(add(sig, 64))
@@ -526,8 +517,8 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   /// @dev Parses a 66-char hex string ("0x" + 64 hex chars) into bytes32.
   function _hexToBytes32(string memory s) internal pure returns (bytes32 result) {
     bytes memory b = bytes(s);
-    require(b.length == 66, "Bad hex length");
-    require(b[0] == "0" && (b[1] == "x" || b[1] == "X"), "No 0x prefix");
+    require(b.length == 66, "hex");
+    require(b[0] == "0" && (b[1] == "x" || b[1] == "X"), "hex");
     for (uint256 i = 2; i < 66; i++) {
       uint8 hi = _fromHexChar(uint8(b[i]));
       i++;
@@ -543,6 +534,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     if (c >= 48 && c <= 57) return c - 48; // 0-9
     if (c >= 97 && c <= 102) return c - 87; // a-f
     if (c >= 65 && c <= 70) return c - 55; // A-F
-    revert("Bad hex char");
+    revert("hex");
   }
 }

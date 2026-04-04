@@ -54,8 +54,7 @@ export const humanENSLinkerABI = [
     type: "function",
     name: "setAgentText",
     inputs: [
-      { name: "parentLabel", type: "string" },
-      { name: "agentLabel", type: "string" },
+      { name: "agentNode", type: "bytes32" },
       { name: "key", type: "string" },
       { name: "value", type: "string" },
       { name: "nullifierHash", type: "bytes32" },
