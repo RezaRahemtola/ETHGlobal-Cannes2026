@@ -27,11 +27,17 @@ async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: str
   });
 
   const payload = await res.json();
+  console.log("World ID v4 verify response:", JSON.stringify(payload, null, 2));
   if (!res.ok || !payload.success) {
     throw new Error(`World ID verification failed: ${payload.detail || payload.code || "unknown"}`);
   }
 
-  return { nullifierHash: payload.nullifier_hash };
+  const nullifierHash = payload.nullifier_hash ?? payload.nullifier;
+  if (!nullifierHash) {
+    throw new Error(`No nullifier in response. Keys: ${Object.keys(payload).join(", ")}`);
+  }
+
+  return { nullifierHash };
 }
 
 // ─── Sign attestation ────────────────────────────────────────────────
