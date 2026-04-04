@@ -183,10 +183,12 @@ function RegisterFlow() {
         style={{
           background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
         }}
-        disabled={!label || status !== "idle" || isLoadingRp}
+        disabled={!label || (status !== "idle" && status !== "error") || isLoadingRp}
         onClick={handleStartVerify}
       >
-        {status === "idle" ? (isLoadingRp ? "Loading..." : "Verify & Register") : "Processing..."}
+        {status === "idle" || status === "error"
+          ? (isLoadingRp ? "Loading..." : "Verify & Register")
+          : "Processing..."}
       </button>
 
       {(error || idkitError) && (
