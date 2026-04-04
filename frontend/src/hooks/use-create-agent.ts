@@ -16,11 +16,14 @@ export function useCreateAgent() {
     agentLabel: string;
     agentAddress: `0x${string}`;
     idkitResult: unknown;
+    ensip25Key?: string;
   }) {
     setStatus("attesting");
     setError(null);
 
     try {
+      const ensip25Key = args.ensip25Key || "";
+
       const attResponse = await fetch(`${BACKEND_URL}/api/verify-and-sign-agent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -28,6 +31,7 @@ export function useCreateAgent() {
           parentLabel: args.parentLabel,
           agentLabel: args.agentLabel,
           agentAddress: args.agentAddress,
+          ensip25Key,
           idkitResult: args.idkitResult,
         }),
       });
@@ -52,6 +56,7 @@ export function useCreateAgent() {
               args.parentLabel,
               args.agentLabel,
               args.agentAddress,
+              ensip25Key,
               nullifierHash,
               BigInt(timestamp),
               signature,
