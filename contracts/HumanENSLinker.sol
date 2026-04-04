@@ -165,9 +165,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
       // Owner changed on L1 — clear the stale link
       // Find old label from labelHashToSourceNode reverse lookup
       _clearLink(existingNullifier, sourceNode, label);
-      bytes32 baseNode = registry.baseNode();
-      bytes32 oldNode = registry.makeNode(baseNode, label);
-      registry.setAddr(oldNode, address(0));
     }
 
     // One link per World ID nullifier
@@ -221,11 +218,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     _clearLink(nullifierHash, sourceNode, label);
 
-    bytes32 baseNode = registry.baseNode();
-    bytes32 node = registry.makeNode(baseNode, label);
-    registry.setAddr(node, address(0));
-    registry.setText(node, "world-id-level", "");
-
     emit LinkRevoked(label, sourceNode);
   }
 
@@ -267,7 +259,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
 
     // Re-derive node from label — don't trust extraData
     require(labelHashToSourceNode[keccak256(bytes(label))] == sourceNode, "bad label");
-    bytes32 node = registry.makeNode(registry.baseNode(), label);
 
     // Verify gateway response + check validity
     {
@@ -303,8 +294,6 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     // Stale — clear state then burn (checks-effects-interactions)
     bytes32 nullifier = sourceNodeToNullifier[sourceNode];
     _clearLink(nullifier, sourceNode, label);
-    registry.setAddr(node, address(0));
-    registry.setText(node, "world-id-level", "");
 
     emit LinkChallenged(label, sourceNode, challenger);
   }
@@ -497,6 +486,11 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     delete sourceNodeToEnsOwner[sourceNode];
     delete sourceNodeToNullifier[sourceNode];
     delete labelHashToSourceNode[keccak256(bytes(label))];
+
+    bytes32 baseNode = registry.baseNode();
+    bytes32 node = registry.makeNode(baseNode, label);
+    registry.setAddr(node, address(0));
+    registry.setText(node, "world-id-level", "");
   }
 
   /// @dev Removes an agent node from nullifierAgentNodes using swap-and-pop.
