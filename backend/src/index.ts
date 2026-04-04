@@ -78,16 +78,13 @@ app.use((_req, res, next) => {
 
 app.post("/api/rp-signature", async (req, res) => {
   try {
-    const { sig, nonce, createdAt, expiresAt } = signRequest({
-      signingKeyHex: RP_SIGNING_KEY,
-      action: WORLD_ID_ACTION,
-    });
+    const { sig, nonce, createdAt, expiresAt } = signRequest(WORLD_ID_ACTION, RP_SIGNING_KEY);
 
     res.json({
       sig,
       nonce,
-      created_at: createdAt,
-      expires_at: expiresAt,
+      created_at: Number(createdAt),
+      expires_at: Number(expiresAt),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
