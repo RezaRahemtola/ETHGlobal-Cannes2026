@@ -418,7 +418,15 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
   ) external {
     require(block.timestamp <= timestamp + MAX_AGE, "Attestation expired");
     bytes32 h = keccak256(
-      abi.encodePacked("setAgentText", nullifierHash, parentLabel, agentLabel, key, value, timestamp)
+      abi.encodePacked(
+        "setAgentText",
+        nullifierHash,
+        parentLabel,
+        agentLabel,
+        key,
+        value,
+        timestamp
+      )
     );
     require(_recover(h, sig) == backendSigner, "Bad backend sig");
     require(nullifierToSourceNode[nullifierHash] != bytes32(0), "No parent link");
