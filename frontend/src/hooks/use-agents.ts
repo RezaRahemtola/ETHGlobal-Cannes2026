@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPublicClient, http, parseAbiItem } from "viem";
+import { createPublicClient, http, namehash, parseAbiItem } from "viem";
 import { HUMANENS_LINKER_ADDRESS } from "@/lib/constants";
+import { humanENSLinkerABI } from "@/lib/contracts";
 import { lookupAgentBook } from "./use-agentbook";
 
 const worldchain = {
@@ -84,25 +85,47 @@ export function useAgents(parentLabel: string) {
           })
           .map(([, l]) => l);
 
-        const agentsWithStatus = await Promise.all(
-          activeAgentLogs.map(async (l) => {
-            const addr = l.args.agentAddress! as `0x${string}`;
-            let agentBookRegistered = false;
-            try {
-              const humanId = await lookupAgentBook(addr);
-              agentBookRegistered = humanId !== BigInt(0);
-            } catch {
-              // AgentBook lookup failed, assume not registered
-            }
-            return {
-              parentLabel: l.args.parentLabel!,
-              agentLabel: l.args.agentLabel!,
-              agentAddress: l.args.agentAddress!,
-              fullName: `${l.args.agentLabel}.${l.args.parentLabel}.humanens.eth`,
-              agentBookRegistered,
-            };
-          }),
-        );
+        const agentsWithStatus = (
+          await Promise.all(
+            activeAgentLogs.map(async (l) => {
+              const pLabel = l.args.parentLabel!;
+              const aLabel = l.args.agentLabel!;
+              const addr = l.args.agentAddress! as `0x${string}`;
+              // Check if agent is still active on-chain (not cleared by _clearLink)
+              const agentNode = namehash(`${aLabel}.${pLabel}.humanens.eth`);
+              try {
+                const parentNullifier = await client.readContract({
+                  address: HUMANENS_LINKER_ADDRESS,
+                  abi: humanENSLinkerABI,
+                  functionName: "agentToParentNullifier",
+                  args: [agentNode as `0x${string}`],
+                });
+                if (
+                  parentNullifier ===
+                  "0x0000000000000000000000000000000000000000000000000000000000000000"
+                ) {
+                  return null; // Zombie agent — cleared by _clearLink
+                }
+              } catch {
+                return null;
+              }
+              let agentBookRegistered = false;
+              try {
+                const humanId = await lookupAgentBook(addr);
+                agentBookRegistered = humanId !== BigInt(0);
+              } catch {
+                // AgentBook lookup failed, assume not registered
+              }
+              return {
+                parentLabel: pLabel,
+                agentLabel: aLabel,
+                agentAddress: addr as string,
+                fullName: `${aLabel}.${pLabel}.humanens.eth`,
+                agentBookRegistered,
+              };
+            }),
+          )
+        ).filter((a): a is Agent => a !== null);
 
         setAgents(agentsWithStatus);
       } catch {

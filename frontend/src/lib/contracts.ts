@@ -92,6 +92,13 @@ export const humanENSLinkerABI = [
     stateMutability: "view",
   },
   {
+    type: "function",
+    name: "agentToParentNullifier",
+    inputs: [{ name: "", type: "bytes32" }],
+    outputs: [{ name: "", type: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
     type: "error",
     name: "OffchainLookup",
     inputs: [
