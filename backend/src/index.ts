@@ -132,11 +132,13 @@ app.post("/api/verify-and-attest", async (req, res) => {
     const { idkitResult, sourceNode, label } = req.body;
 
     if (!idkitResult || !sourceNode || !label) {
-      const missing = [!idkitResult && "idkitResult", !sourceNode && "sourceNode", !label && "label"].filter(Boolean);
+      const missing = [
+        !idkitResult && "idkitResult",
+        !sourceNode && "sourceNode",
+        !label && "label",
+      ].filter(Boolean);
       console.error("verify-and-attest missing fields:", missing.join(", "));
-      return res
-        .status(400)
-        .json({ error: `Missing fields: ${missing.join(", ")}` });
+      return res.status(400).json({ error: `Missing fields: ${missing.join(", ")}` });
     }
 
     // Step 1: Verify World ID proof via cloud API
@@ -260,13 +262,7 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
     const hash = keccak256(
       encodePacked(
         ["string", "bytes32", "string", "string", "uint256"],
-        [
-          "revokeAgent",
-          nullifierHash as Hex,
-          parentLabel,
-          agentLabel,
-          timestamp,
-        ],
+        ["revokeAgent", nullifierHash as Hex, parentLabel, agentLabel, timestamp],
       ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });
