@@ -1,23 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MiniKit,
-  VerificationLevel,
-  type MiniAppVerifyActionSuccessPayload,
   type MiniAppSendTransactionSuccessPayload,
 } from "@worldcoin/minikit-js";
+import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { useAgents } from "@/hooks/use-agents";
 import { useCreateAgent } from "@/hooks/use-create-agent";
+import { useIdkitVerify } from "@/hooks/use-idkit-verify";
 import { cn } from "@/lib/utils";
 import { humanENSLinkerABI } from "@/lib/contracts";
-import { HUMANENS_LINKER_ADDRESS, BACKEND_URL, WORLD_ACTION_ID } from "@/lib/constants";
+import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 
 // ---- Revoke hook (inline, similar to create) ----
 type RevokeStatus =
   | "idle"
-  | "verifying"
   | "attesting"
   | "sending"
   | "confirming"
@@ -28,35 +27,22 @@ function useRevokeAgent() {
   const [status, setStatus] = useState<RevokeStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  async function revokeAgent(args: { parentLabel: string; agentLabel: string }) {
-    setStatus("verifying");
+  async function revokeAgent(args: {
+    parentLabel: string;
+    agentLabel: string;
+    idkitResult: unknown;
+  }) {
+    setStatus("attesting");
     setError(null);
 
     try {
-      const { finalPayload: verifyPayload } = await MiniKit.commandsAsync.verify({
-        action: WORLD_ACTION_ID,
-        verification_level: VerificationLevel.Orb,
-      });
-
-      if (verifyPayload.status !== "success") throw new Error("World ID verification failed");
-
-      const successVerify = verifyPayload as MiniAppVerifyActionSuccessPayload;
-      const idkitResult = {
-        nullifier_hash: successVerify.nullifier_hash,
-        proof: successVerify.proof,
-        merkle_root: successVerify.merkle_root,
-        verification_level: successVerify.verification_level,
-      };
-
-      setStatus("attesting");
-
       const attResponse = await fetch(`${BACKEND_URL}/api/attest-revoke-agent`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           parentLabel: args.parentLabel,
           agentLabel: args.agentLabel,
-          idkitResult,
+          idkitResult: args.idkitResult,
         }),
       });
 
@@ -123,20 +109,34 @@ function AgentCard({
   onRevoked: () => void;
 }) {
   const { revokeAgent, status, error, reset } = useRevokeAgent();
+  const { rpContext, isLoadingRp, fetchRpContext, appId, action } = useIdkitVerify();
+  const [idkitOpen, setIdkitOpen] = useState(false);
+  const [idkitResult, setIdkitResult] = useState<unknown>(null);
 
   const isBusy = status !== "idle" && status !== "success" && status !== "error";
 
   const statusLabel: Record<string, string> = {
-    verifying: "Verifying with World ID...",
     attesting: "Getting attestation...",
     sending: "Confirm in World App...",
     confirming: "Confirming...",
   };
 
   async function handleRevoke() {
-    await revokeAgent({ parentLabel: agent.parentLabel, agentLabel: agent.agentLabel });
-    if (status === "success") onRevoked();
+    await fetchRpContext();
+    setIdkitOpen(true);
   }
+
+  useEffect(() => {
+    if (idkitResult) {
+      revokeAgent({
+        parentLabel: agent.parentLabel,
+        agentLabel: agent.agentLabel,
+        idkitResult,
+      }).then(() => {
+        onRevoked();
+      });
+    }
+  }, [idkitResult]);
 
   if (status === "success") {
     return (
@@ -193,17 +193,33 @@ function AgentCard({
         ) : (
           <button
             onClick={handleRevoke}
-            disabled={isBusy}
+            disabled={isBusy || isLoadingRp}
             className={cn(
               "flex-1 h-8 rounded-full text-xs font-medium transition-all",
               "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:scale-[1.01]",
-              isBusy && "opacity-50 cursor-not-allowed hover:scale-100",
+              (isBusy || isLoadingRp) && "opacity-50 cursor-not-allowed hover:scale-100",
             )}
           >
-            {isBusy ? "Processing..." : "Revoke"}
+            {isLoadingRp ? "Loading..." : isBusy ? "Processing..." : "Revoke"}
           </button>
         )}
       </div>
+
+      {rpContext && (
+        <IDKitRequestWidget
+          open={idkitOpen}
+          onOpenChange={setIdkitOpen}
+          app_id={appId as `app_${string}`}
+          action={action}
+          rp_context={rpContext}
+          allow_legacy_proofs={true}
+          preset={orbLegacy()}
+          onSuccess={(result) => {
+            setIdkitResult(result);
+          }}
+          onError={(code) => console.error("IDKit error", code)}
+        />
+      )}
     </div>
   );
 }
@@ -224,6 +240,15 @@ function ManageFlow() {
     error: createError,
     reset: createReset,
   } = useCreateAgent();
+  const {
+    rpContext: createRpContext,
+    isLoadingRp: isLoadingCreateRp,
+    fetchRpContext: fetchCreateRpContext,
+    appId,
+    action,
+  } = useIdkitVerify();
+  const [createIdkitOpen, setCreateIdkitOpen] = useState(false);
+  const [createIdkitResult, setCreateIdkitResult] = useState<unknown>(null);
 
   const isCreating =
     createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
@@ -235,34 +260,27 @@ function ManageFlow() {
   };
 
   async function handleCreate() {
-    const { finalPayload } = await MiniKit.commandsAsync.verify({
-      action: WORLD_ACTION_ID,
-      verification_level: VerificationLevel.Orb,
-    });
-
-    if (finalPayload.status !== "success") return;
-
-    const successPayload = finalPayload as MiniAppVerifyActionSuccessPayload;
-    const idkitResult = {
-      nullifier_hash: successPayload.nullifier_hash,
-      proof: successPayload.proof,
-      merkle_root: successPayload.merkle_root,
-      verification_level: successPayload.verification_level,
-    };
-
-    await createAgent({
-      parentLabel: submittedLabel,
-      agentLabel,
-      agentAddress: agentAddress as `0x${string}`,
-      idkitResult,
-    });
-
-    if (createStatus !== "error") {
-      setAgentLabel("");
-      setAgentAddress("");
-      setRefreshKey((k) => k + 1);
-    }
+    await fetchCreateRpContext();
+    setCreateIdkitOpen(true);
   }
+
+  useEffect(() => {
+    if (createIdkitResult && submittedLabel && agentLabel && agentAddress) {
+      createAgent({
+        parentLabel: submittedLabel,
+        agentLabel,
+        agentAddress: agentAddress as `0x${string}`,
+        idkitResult: createIdkitResult,
+      }).then(() => {
+        if (createStatus !== "error") {
+          setAgentLabel("");
+          setAgentAddress("");
+          setRefreshKey((k) => k + 1);
+        }
+      });
+      setCreateIdkitResult(null);
+    }
+  }, [createIdkitResult]);
 
   function handleLookup() {
     setSubmittedLabel(parentLabel.trim().toLowerCase());
@@ -456,21 +474,37 @@ function ManageFlow() {
                 )}
                 <button
                   onClick={handleCreate}
-                  disabled={!canCreate}
+                  disabled={!canCreate || isLoadingCreateRp}
                   className={cn(
                     "btn-glow flex-1 h-10 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01]",
-                    !canCreate && "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-lg",
+                    (!canCreate || isLoadingCreateRp) && "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-lg",
                   )}
                   style={{
                     background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
                   }}
                 >
-                  {isCreating ? "Processing..." : "Create Agent (Gas Free)"}
+                  {isLoadingCreateRp ? "Loading..." : isCreating ? "Processing..." : "Create Agent"}
                 </button>
               </div>
             </div>
           </div>
         </>
+      )}
+
+      {createRpContext && (
+        <IDKitRequestWidget
+          open={createIdkitOpen}
+          onOpenChange={setCreateIdkitOpen}
+          app_id={appId as `app_${string}`}
+          action={action}
+          rp_context={createRpContext}
+          allow_legacy_proofs={true}
+          preset={orbLegacy()}
+          onSuccess={(result) => {
+            setCreateIdkitResult(result);
+          }}
+          onError={(code) => console.error("IDKit error", code)}
+        />
       )}
     </main>
   );

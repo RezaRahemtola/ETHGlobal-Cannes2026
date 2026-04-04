@@ -15,12 +15,7 @@ export function useCreateAgent() {
     parentLabel: string;
     agentLabel: string;
     agentAddress: `0x${string}`;
-    idkitResult: {
-      nullifier_hash: string;
-      proof: string;
-      merkle_root: string;
-      verification_level: string;
-    };
+    idkitResult: unknown;
   }) {
     setStatus("attesting");
     setError(null);
