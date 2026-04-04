@@ -155,9 +155,9 @@ function AgentCard({ agent, onRevoked }: { agent: Agent; onRevoked: () => void }
         </span>
       </div>
 
-      {/* Status badges */}
-      <div className="flex gap-1.5 flex-wrap">
-        {agent.agentBookRegistered ? (
+      {/* AgentBook status */}
+      {agent.agentBookRegistered ? (
+        <div className="flex gap-1.5">
           <span
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
             style={{
@@ -168,43 +168,72 @@ function AgentCard({ agent, onRevoked }: { agent: Agent; onRevoked: () => void }
           >
             AgentBook
           </span>
-        ) : (
-          <button
-            onClick={() => setShowAbInfo((v) => !v)}
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium transition-all hover:scale-105"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              color: "rgba(255,255,255,0.4)",
-              border: "1px dashed rgba(255,255,255,0.15)",
-            }}
-          >
-            + AgentBook
-          </button>
-        )}
-      </div>
-
-      {showAbInfo && !agent.agentBookRegistered && (
+        </div>
+      ) : showAbInfo ? (
         <div
-          className="rounded-lg px-3 py-2 space-y-1.5"
+          className="rounded-lg px-3 py-2.5 space-y-2"
           style={{ background: "rgba(56,137,255,0.05)", border: "1px solid rgba(56,137,255,0.15)" }}
         >
-          <p className="text-[11px] text-muted-foreground">Register via CLI:</p>
-          <code
-            className="block text-[11px] font-mono break-all px-2 py-1.5 rounded"
+          <p className="text-xs text-muted-foreground">Register this agent in AgentBook via CLI:</p>
+          <div
+            onClick={() =>
+              navigator.clipboard.writeText(
+                `npx @worldcoin/agentkit-cli register ${agent.agentAddress}`,
+              )
+            }
+            className="flex items-start gap-2 text-xs font-mono break-all px-3 py-2 rounded cursor-pointer transition-all active:scale-[0.99]"
             style={{ background: "rgba(0,0,0,0.3)", color: "#3889FF" }}
           >
-            npx @worldcoin/agentkit-cli register {agent.agentAddress}
-          </code>
-          <a
-            href="https://www.agentbook.world/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-[11px] font-medium transition-all hover:underline"
-            style={{ color: "#3889FF" }}
-          >
-            Learn more on agentbook.world &rarr;
-          </a>
+            <span className="flex-1">
+              npx @worldcoin/agentkit-cli register {agent.agentAddress}
+            </span>
+            <svg
+              className="shrink-0 mt-0.5 opacity-50"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </div>
+          <div className="flex items-center justify-between">
+            <a
+              href="https://www.agentbook.world/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium transition-all hover:underline"
+              style={{ color: "#3889FF" }}
+            >
+              agentbook.world &rarr;
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowAbInfo(false)}
+              className="text-xs text-muted-foreground hover:text-white transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowAbInfo(true)}
+          className="w-full h-8 rounded-lg text-xs font-medium transition-all active:scale-[0.98]"
+          style={{
+            background: "rgba(56,137,255,0.08)",
+            color: "#3889FF",
+            border: "1px solid rgba(56,137,255,0.2)",
+          }}
+        >
+          Register in AgentBook
+        </button>
       )}
 
       {isBusy && (
