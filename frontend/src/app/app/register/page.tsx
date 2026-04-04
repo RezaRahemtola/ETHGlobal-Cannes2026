@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
@@ -21,7 +21,6 @@ function RegisterFlow() {
   } = useIdkitVerify();
 
   const [idkitOpen, setIdkitOpen] = useState(false);
-  const [idkitResult, setIdkitResult] = useState<unknown>(null);
 
   const statusMessages: Record<string, string> = {
     idle: "",
@@ -38,12 +37,6 @@ function RegisterFlow() {
     await fetchRpContext();
     setIdkitOpen(true);
   }
-
-  useEffect(() => {
-    if (idkitResult && label) {
-      register({ label, idkitResult });
-    }
-  }, [idkitResult]);
 
   if (status === "success") {
     return (
@@ -176,7 +169,7 @@ function RegisterFlow() {
           allow_legacy_proofs={true}
           preset={orbLegacy()}
           onSuccess={(result) => {
-            setIdkitResult(result);
+            if (label) register({ label, idkitResult: result });
           }}
           onError={(code) => console.error("IDKit error", code)}
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
 import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
@@ -104,7 +104,6 @@ function AgentCard({
   const { revokeAgent, status, error, reset } = useRevokeAgent();
   const { rpContext, isLoadingRp, fetchRpContext, appId, action } = useIdkitVerify();
   const [idkitOpen, setIdkitOpen] = useState(false);
-  const [idkitResult, setIdkitResult] = useState<unknown>(null);
 
   const isBusy = status !== "idle" && status !== "success" && status !== "error";
 
@@ -119,17 +118,15 @@ function AgentCard({
     setIdkitOpen(true);
   }
 
-  useEffect(() => {
-    if (idkitResult) {
-      revokeAgent({
-        parentLabel: agent.parentLabel,
-        agentLabel: agent.agentLabel,
-        idkitResult,
-      }).then(() => {
-        onRevoked();
-      });
-    }
-  }, [idkitResult]);
+  function handleIdkitSuccess(result: unknown) {
+    revokeAgent({
+      parentLabel: agent.parentLabel,
+      agentLabel: agent.agentLabel,
+      idkitResult: result,
+    }).then(() => {
+      onRevoked();
+    });
+  }
 
   if (status === "success") {
     return (
@@ -207,9 +204,7 @@ function AgentCard({
           rp_context={rpContext}
           allow_legacy_proofs={true}
           preset={orbLegacy()}
-          onSuccess={(result) => {
-            setIdkitResult(result);
-          }}
+          onSuccess={handleIdkitSuccess}
           onError={(code) => console.error("IDKit error", code)}
         />
       )}
@@ -241,7 +236,6 @@ function ManageFlow() {
     action,
   } = useIdkitVerify();
   const [createIdkitOpen, setCreateIdkitOpen] = useState(false);
-  const [createIdkitResult, setCreateIdkitResult] = useState<unknown>(null);
 
   const isCreating =
     createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
@@ -257,23 +251,20 @@ function ManageFlow() {
     setCreateIdkitOpen(true);
   }
 
-  useEffect(() => {
-    if (createIdkitResult && submittedLabel && agentLabel && agentAddress) {
+  function handleCreateIdkitSuccess(result: unknown) {
+    if (submittedLabel && agentLabel && agentAddress) {
       createAgent({
         parentLabel: submittedLabel,
         agentLabel,
         agentAddress: agentAddress as `0x${string}`,
-        idkitResult: createIdkitResult,
+        idkitResult: result,
       }).then(() => {
-        if (createStatus !== "error") {
-          setAgentLabel("");
-          setAgentAddress("");
-          setRefreshKey((k) => k + 1);
-        }
+        setAgentLabel("");
+        setAgentAddress("");
+        setRefreshKey((k) => k + 1);
       });
-      setCreateIdkitResult(null);
     }
-  }, [createIdkitResult]);
+  }
 
   function handleLookup() {
     setSubmittedLabel(parentLabel.trim().toLowerCase());
@@ -494,9 +485,7 @@ function ManageFlow() {
           rp_context={createRpContext}
           allow_legacy_proofs={true}
           preset={orbLegacy()}
-          onSuccess={(result) => {
-            setCreateIdkitResult(result);
-          }}
+          onSuccess={handleCreateIdkitSuccess}
           onError={(code) => console.error("IDKit error", code)}
         />
       )}
