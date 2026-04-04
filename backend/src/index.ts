@@ -134,9 +134,11 @@ app.post("/api/verify-and-attest", async (req, res) => {
     const { idkitResult, registrant, sourceNode, label } = req.body;
 
     if (!idkitResult || !registrant || !sourceNode || !label) {
+      const missing = [!idkitResult && "idkitResult", !registrant && "registrant", !sourceNode && "sourceNode", !label && "label"].filter(Boolean);
+      console.error("verify-and-attest missing fields:", missing.join(", "));
       return res
         .status(400)
-        .json({ error: "Missing fields: idkitResult, registrant, sourceNode, label" });
+        .json({ error: `Missing fields: ${missing.join(", ")}` });
     }
 
     // Step 1: Verify World ID proof via cloud API
