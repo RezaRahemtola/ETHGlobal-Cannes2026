@@ -20,12 +20,6 @@ const account = privateKeyToAccount(BACKEND_SIGNER_KEY);
 // ─── World ID cloud verification ────────────────────────────────────
 
 async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: string }> {
-  // Verify action matches our expected action
-  const result = idkitResult as Record<string, unknown>;
-  if (result.action !== WORLD_ID_ACTION) {
-    throw new Error(`Action mismatch: expected "${WORLD_ID_ACTION}", got "${result.action}"`);
-  }
-
   const res = await fetch(`https://developer.world.org/api/v4/verify/${WORLD_ID_RP_ID}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -37,7 +31,7 @@ async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: str
     throw new Error(`World ID verification failed: ${payload.detail || payload.code || "unknown"}`);
   }
 
-  return { nullifierHash: payload.nullifier };
+  return { nullifierHash: payload.nullifier_hash };
 }
 
 // ─── Sign attestation ────────────────────────────────────────────────
