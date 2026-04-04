@@ -103,9 +103,7 @@ export function Verifier() {
             )}
           </div>
           {result.humanensSubname && result.worldIdLevel && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              World ID: {result.worldIdLevel}
-            </p>
+            <p className="mt-2 text-xs text-muted-foreground">World ID: {result.worldIdLevel}</p>
           )}
           {result.isVerified && (
             <p className="mt-1 text-xs" style={{ color: "rgba(110,231,183,0.7)" }}>

@@ -182,13 +182,13 @@ app.post("/api/verify-and-attest", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-revoke
- * Body: { idkitResult, sourceNode, label }
- * Hash: keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, timestamp))
+ * Body: { idkitResult, sourceNode, label, level }
+ * Hash: keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, level, timestamp))
  */
 app.post("/api/verify-and-sign-revoke", async (req, res) => {
   try {
-    const { idkitResult, sourceNode, label } = req.body;
-    if (!idkitResult || !sourceNode || !label) {
+    const { idkitResult, sourceNode, label, level } = req.body;
+    if (!idkitResult || !sourceNode || !label || !level) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -200,6 +200,7 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
+      level,
       timestamp,
     );
 
