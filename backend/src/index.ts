@@ -300,15 +300,7 @@ app.post("/api/verify-and-sign-set-agent-text", async (req, res) => {
     const hash = keccak256(
       encodePacked(
         ["string", "bytes32", "string", "string", "string", "string", "uint256"],
-        [
-          "setAgentText",
-          nullifierHash as Hex,
-          parentLabel,
-          agentLabel,
-          key,
-          value,
-          timestamp,
-        ],
+        ["setAgentText", nullifierHash as Hex, parentLabel, agentLabel, key, value, timestamp],
       ),
     );
     const signature = await account.signMessage({ message: { raw: hash } });

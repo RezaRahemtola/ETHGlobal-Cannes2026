@@ -184,8 +184,14 @@ function AgentCard({
       {/* Status badges */}
       <div className="flex gap-1.5 flex-wrap">
         {agent.agentBookRegistered ? (
-          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
-            style={{ background: "rgba(56,137,255,0.1)", color: "#3889FF", border: "1px solid rgba(56,137,255,0.2)" }}>
+          <span
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{
+              background: "rgba(56,137,255,0.1)",
+              color: "#3889FF",
+              border: "1px solid rgba(56,137,255,0.2)",
+            }}
+          >
             AgentBook
           </span>
         ) : (
@@ -193,14 +199,21 @@ function AgentCard({
             onClick={handleAgentBookRegister}
             disabled={isAbBusy}
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium transition-all hover:scale-105"
-            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px dashed rgba(255,255,255,0.15)" }}>
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              color: "rgba(255,255,255,0.4)",
+              border: "1px dashed rgba(255,255,255,0.15)",
+            }}
+          >
             {isAbBusy ? "Registering..." : "+ AgentBook"}
           </button>
         )}
       </div>
 
       {abStatus === "success" && (
-        <p className="text-xs" style={{ color: "#6EE7B7" }}>Registered in AgentBook!</p>
+        <p className="text-xs" style={{ color: "#6EE7B7" }}>
+          Registered in AgentBook!
+        </p>
       )}
       {abError && <p className="text-xs text-destructive">{abError}</p>}
 
@@ -294,9 +307,7 @@ function ManageFlow() {
   function handleCreateIdkitSuccess(result: unknown) {
     if (submittedLabel && agentLabel && agentAddress) {
       const ensip25Key =
-        erc8004Chain && erc8004AgentId
-          ? buildENSIP25Key(erc8004Chain, erc8004AgentId)
-          : undefined;
+        erc8004Chain && erc8004AgentId ? buildENSIP25Key(erc8004Chain, erc8004AgentId) : undefined;
 
       createAgent({
         parentLabel: submittedLabel,
