@@ -1,7 +1,7 @@
 "use client";
 
-import { useQueryState } from "nuqs";
 import { useVerifyName } from "@/hooks/use-verify-name";
+import { useQueryState } from "nuqs";
 
 export function Verifier() {
   const [name, setName] = useQueryState("name", { defaultValue: "" });
@@ -102,10 +102,9 @@ export function Verifier() {
               </span>
             )}
           </div>
-          {result.humanensSubname && (
+          {result.humanensSubname && result.worldIdLevel && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Subname: {result.humanensSubname}
-              {result.worldIdLevel && <> &middot; World ID: {result.worldIdLevel}</>}
+              World ID: {result.worldIdLevel}
             </p>
           )}
           {result.isVerified && (
