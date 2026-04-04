@@ -95,8 +95,8 @@ function RegisterFlow() {
             Your verified HumanENS subname has been registered.
           </p>
           {txHash && (
-            <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-              Tx: {txHash}
+            <p className="mt-2 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Tx: {txHash.slice(0, 10)}...{txHash.slice(-6)}
             </p>
           )}
           <Link

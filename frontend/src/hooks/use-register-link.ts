@@ -74,7 +74,13 @@ export function useRegisterLink() {
         ],
       });
 
-      if (finalPayload.status !== "success") throw new Error("Transaction failed");
+      if (finalPayload.status !== "success") {
+        const msg =
+          (finalPayload as Record<string, unknown>).error_code ||
+          (finalPayload as Record<string, unknown>).message ||
+          "Transaction failed";
+        throw new Error(String(msg));
+      }
 
       const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
 
