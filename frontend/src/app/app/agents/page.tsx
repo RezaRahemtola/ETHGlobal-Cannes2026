@@ -113,7 +113,8 @@ function AgentCard({ agent, onRevoked }: { agent: Agent; onRevoked: () => void }
       agentLabel: agent.agentLabel,
       idkitResult: result,
     }).then(() => {
-      onRevoked();
+      // Wait for RPC to reflect the new state
+      setTimeout(onRevoked, 2000);
     });
   }
 
