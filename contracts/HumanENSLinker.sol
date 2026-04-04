@@ -224,6 +224,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes32 baseNode = registry.baseNode();
     bytes32 node = registry.makeNode(baseNode, label);
     registry.setAddr(node, address(0));
+    registry.setText(node, "world-id-level", "");
 
     emit LinkRevoked(label, sourceNode);
   }
@@ -303,6 +304,7 @@ contract HumanENSLinker is Ownable, IERC721Receiver {
     bytes32 nullifier = sourceNodeToNullifier[sourceNode];
     _clearLink(nullifier, sourceNode, label);
     registry.setAddr(node, address(0));
+    registry.setText(node, "world-id-level", "");
 
     emit LinkChallenged(label, sourceNode, challenger);
   }
