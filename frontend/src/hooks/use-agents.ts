@@ -30,6 +30,7 @@ export interface Agent {
 export function useAgents(parentLabel: string) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     if (!parentLabel) return;
@@ -112,7 +113,11 @@ export function useAgents(parentLabel: string) {
     }
 
     fetchAgents();
-  }, [parentLabel]);
+  }, [parentLabel, fetchKey]);
 
-  return { agents, isLoading };
+  function refetch() {
+    setFetchKey((k) => k + 1);
+  }
+
+  return { agents, isLoading, refetch };
 }

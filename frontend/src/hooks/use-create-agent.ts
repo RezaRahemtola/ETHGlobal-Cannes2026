@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 
@@ -67,26 +67,12 @@ export function useCreateAgent() {
 
       if (finalPayload.status !== "success") throw new Error("Transaction failed");
 
-      const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
-
-      setStatus("confirming");
-      let attempts = 0;
-      while (attempts < 30) {
-        const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
-        );
-        const statusData = await statusRes.json();
-        if (statusData.transactionStatus === "confirmed") {
-          setStatus("success");
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 2000));
-        attempts++;
-      }
       setStatus("success");
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create agent");
       setStatus("error");
+      return false;
     }
   }
 

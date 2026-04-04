@@ -1,7 +1,7 @@
 /**
  * ERC-7930 interoperable address encoding for EVM chains.
- * Format: 0x + namespace(2) + ULEB128(chainId) + addressLength(1) + address(20)
- * Namespace 0x0001 = EVM
+ * Format: version(2) + chainType(2) + chainRefLen(1) + chainRef(variable) + addrLen(1) + addr(variable)
+ * Version 0x0001, ChainType 0x0000 = EVM
  */
 
 const ERC8004_REGISTRY = "8004A169FB4a3325136EB29fA0ceB6D2e539a432";
@@ -26,31 +26,23 @@ export const ERC8004_CHAINS = [
 ] as const;
 
 /**
- * Encode an unsigned integer as ULEB128.
- */
-function encodeULEB128(value: number): Uint8Array {
-  const bytes: number[] = [];
-  do {
-    let byte = value & 0x7f;
-    value >>>= 7;
-    if (value !== 0) byte |= 0x80;
-    bytes.push(byte);
-  } while (value !== 0);
-  return new Uint8Array(bytes);
-}
-
-/**
  * Encode an EVM address as an ERC-7930 interoperable address.
  */
 export function encodeERC7930(chainId: number, address: string): string {
   const addr = address.replace("0x", "").toLowerCase();
-  const chainBytes = encodeULEB128(chainId);
+  // Encode chain ID as minimal big-endian bytes
+  const chainRefBytes: number[] = [];
+  let id = chainId;
+  do {
+    chainRefBytes.unshift(id & 0xff);
+    id = id >>> 8;
+  } while (id > 0);
   const hex =
-    "0001" +
-    Array.from(chainBytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("") +
-    "14" +
+    "0001" + // version
+    "0000" + // chainType (EVM)
+    chainRefBytes.length.toString(16).padStart(2, "0") + // chainRefLen
+    chainRefBytes.map((b) => b.toString(16).padStart(2, "0")).join("") + // chainRef
+    "14" + // addrLen (20)
     addr;
   return "0x" + hex;
 }

@@ -93,29 +93,25 @@ export function useRegisterLink() {
         throw new Error(String(msg));
       }
 
-      const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
-
-      // Step 4: Wait for confirmation and get on-chain tx hash
-      setStatus("confirming");
-
-      let attempts = 0;
-      while (attempts < 30) {
-        const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
-        );
-        const statusData = await statusRes.json();
-        if (statusData.transactionHash) {
-          setTxHash(statusData.transactionHash);
-        }
-        if (statusData.transactionStatus === "confirmed") {
-          setStatus("success");
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 2000));
-        attempts++;
-      }
-
       setStatus("success");
+
+      // Poll for tx hash in background (non-blocking)
+      const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
+      (async () => {
+        for (let i = 0; i < 30; i++) {
+          try {
+            const statusRes = await fetch(
+              `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
+            );
+            const statusData = await statusRes.json();
+            if (statusData.transactionHash) {
+              setTxHash(statusData.transactionHash);
+              return;
+            }
+          } catch {}
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      })();
     } catch (e) {
       console.error("[claim] Error:", e);
       setError(e instanceof Error ? e.message : "Registration failed");

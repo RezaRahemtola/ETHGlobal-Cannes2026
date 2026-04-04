@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MiniKit, type MiniAppSendTransactionSuccessPayload } from "@worldcoin/minikit-js";
+import { useState, useEffect, useRef } from "react";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { IDKitRequestWidget, deviceLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { useAgents } from "@/hooks/use-agents";
@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { humanENSLinkerABI } from "@/lib/contracts";
 import { HUMANENS_LINKER_ADDRESS, BACKEND_URL } from "@/lib/constants";
 import { ERC8004_CHAINS, buildENSIP25Key } from "@/lib/erc7930";
-import { useAgentBookRegister } from "@/hooks/use-agentbook";
 import { type Agent } from "@/hooks/use-agents";
 import { useMyLabels } from "@/hooks/use-my-labels";
 
@@ -41,13 +40,18 @@ function useRevokeAgent() {
         }),
       });
 
-      if (!attResponse.ok) throw new Error("Backend attestation failed");
+      if (!attResponse.ok) {
+        const body = await attResponse.json().catch(() => ({}));
+        console.error("[revoke] Backend error:", body);
+        throw new Error(body.error || "Backend attestation failed");
+      }
 
       const { nullifierHash, timestamp, signature } = (await attResponse.json()) as {
         nullifierHash: `0x${string}`;
         timestamp: string;
         signature: `0x${string}`;
       };
+      console.log("[revoke] Got attestation:", { nullifierHash: nullifierHash.slice(0, 10), timestamp });
 
       setStatus("sending");
 
@@ -61,25 +65,10 @@ function useRevokeAgent() {
           },
         ],
       });
+      console.log("[revoke] MiniKit response:", JSON.stringify(finalPayload));
 
       if (finalPayload.status !== "success") throw new Error("Transaction failed");
 
-      const successPayload = finalPayload as MiniAppSendTransactionSuccessPayload;
-
-      setStatus("confirming");
-      let attempts = 0;
-      while (attempts < 30) {
-        const statusRes = await fetch(
-          `https://developer.world.org/api/v2/minikit/transaction/${successPayload.transaction_id}?app_id=${process.env.NEXT_PUBLIC_WORLD_APP_ID}`,
-        );
-        const statusData = await statusRes.json();
-        if (statusData.transactionStatus === "confirmed") {
-          setStatus("success");
-          return;
-        }
-        await new Promise((r) => setTimeout(r, 2000));
-        attempts++;
-      }
       setStatus("success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to revoke agent");
@@ -99,27 +88,14 @@ function useRevokeAgent() {
 function AgentCard({
   agent,
   onRevoked,
-  onRefresh,
 }: {
   agent: Agent;
   onRevoked: () => void;
-  onRefresh: () => void;
 }) {
   const { revokeAgent, status, error, reset } = useRevokeAgent();
   const { rpContext, isLoadingRp, fetchRpContext, appId, action } = useIdkitVerify();
-  const {
-    registerAgent: registerAgentBook,
-    status: abStatus,
-    error: abError,
-  } = useAgentBookRegister();
-
-  const isAbBusy = abStatus !== "idle" && abStatus !== "success" && abStatus !== "error";
-
-  async function handleAgentBookRegister() {
-    await registerAgentBook(agent.agentAddress as `0x${string}`);
-    onRefresh();
-  }
   const [idkitOpen, setIdkitOpen] = useState(false);
+  const [showAbInfo, setShowAbInfo] = useState(false);
 
   const isBusy = status !== "idle" && status !== "success" && status !== "error";
 
@@ -166,7 +142,7 @@ function AgentCard({
             </span>
           </p>
           <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
-            {agent.agentAddress}
+            {agent.agentAddress.slice(0, 6)}...{agent.agentAddress.slice(-4)}
           </p>
         </div>
         <span
@@ -197,8 +173,7 @@ function AgentCard({
           </span>
         ) : (
           <button
-            onClick={handleAgentBookRegister}
-            disabled={isAbBusy}
+            onClick={() => setShowAbInfo((v) => !v)}
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium transition-all hover:scale-105"
             style={{
               background: "rgba(255,255,255,0.05)",
@@ -206,17 +181,36 @@ function AgentCard({
               border: "1px dashed rgba(255,255,255,0.15)",
             }}
           >
-            {isAbBusy ? "Registering..." : "+ AgentBook"}
+            + AgentBook
           </button>
         )}
       </div>
 
-      {abStatus === "success" && (
-        <p className="text-xs" style={{ color: "#6EE7B7" }}>
-          Registered in AgentBook!
-        </p>
+      {showAbInfo && !agent.agentBookRegistered && (
+        <div
+          className="rounded-lg px-3 py-2 space-y-1.5"
+          style={{ background: "rgba(56,137,255,0.05)", border: "1px solid rgba(56,137,255,0.15)" }}
+        >
+          <p className="text-[11px] text-muted-foreground">
+            Register via CLI:
+          </p>
+          <code
+            className="block text-[11px] font-mono break-all px-2 py-1.5 rounded"
+            style={{ background: "rgba(0,0,0,0.3)", color: "#3889FF" }}
+          >
+            npx @worldcoin/agentkit-cli register {agent.agentAddress}
+          </code>
+          <a
+            href="https://www.agentbook.world/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-[11px] font-medium transition-all hover:underline"
+            style={{ color: "#3889FF" }}
+          >
+            Learn more on agentbook.world &rarr;
+          </a>
+        </div>
       )}
-      {abError && <p className="text-xs text-destructive">{abError}</p>}
 
       {isBusy && (
         <p className="text-xs text-muted-foreground animate-pulse">{statusLabel[status]}</p>
@@ -264,6 +258,115 @@ function AgentCard({
   );
 }
 
+// ---- Pending agent card (shown during creation) ----
+function PendingAgentCard({
+  label,
+  parentLabel,
+  address,
+  status,
+  error,
+  onRetry,
+}: {
+  label: string;
+  parentLabel: string;
+  address: string;
+  status: string;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  const statusLabel: Record<string, string> = {
+    attesting: "Getting attestation...",
+    sending: "Confirm in World App...",
+  };
+
+  return (
+    <div
+      className="glass-card rounded-xl px-4 py-3 space-y-2"
+      style={{ border: "1px solid rgba(110,231,183,0.15)" }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-white truncate">
+            <span>{label}</span>
+            <span className="text-muted-foreground font-normal">
+              .{parentLabel}.humanens.eth
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+            {address.slice(0, 6)}...{address.slice(-4)}
+          </p>
+        </div>
+        {status === "success" ? (
+          <span
+            className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            style={{
+              background: "rgba(110,231,183,0.1)",
+              color: "#6EE7B7",
+              border: "1px solid rgba(110,231,183,0.2)",
+              boxShadow: "0 0 8px rgba(110,231,183,0.1)",
+            }}
+          >
+            Active
+          </span>
+        ) : error ? (
+          <span
+            className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            style={{
+              background: "rgba(239,68,68,0.1)",
+              color: "#EF4444",
+              border: "1px solid rgba(239,68,68,0.2)",
+            }}
+          >
+            Failed
+          </span>
+        ) : (
+          <span
+            className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold animate-pulse"
+            style={{
+              background: "rgba(251,191,36,0.1)",
+              color: "#FBbf24",
+              border: "1px solid rgba(251,191,36,0.2)",
+            }}
+          >
+            Creating...
+          </span>
+        )}
+      </div>
+
+      {error ? (
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-destructive flex-1">{error}</p>
+          <button
+            onClick={onRetry}
+            className="shrink-0 h-7 px-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-all"
+            style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : status !== "success" ? (
+        <div className="flex items-center gap-2">
+          <div
+            className="h-1 flex-1 rounded-full overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.06)" }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                background: "linear-gradient(90deg, #6EE7B7, #3889FF)",
+                width: status === "attesting" ? "33%" : status === "sending" ? "66%" : "100%",
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground shrink-0 animate-pulse">
+            {statusLabel[status] ?? "Processing..."}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ---- Manage flow ----
 function ManageFlow() {
   const { labels, isLoading: isLoadingLabels, saveNullifier, needsVerify } = useMyLabels();
@@ -274,9 +377,15 @@ function ManageFlow() {
   const [agentAddress, setAgentAddress] = useState("");
   const [erc8004Chain, setErc8004Chain] = useState<number | null>(null);
   const [erc8004AgentId, setErc8004AgentId] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const { agents, isLoading } = useAgents(submittedLabel);
+  // Track pending agent for the in-list card
+  const [pendingAgent, setPendingAgent] = useState<{
+    label: string;
+    address: string;
+  } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { agents, isLoading, refetch } = useAgents(submittedLabel);
   const {
     createAgent,
     status: createStatus,
@@ -297,18 +406,30 @@ function ManageFlow() {
   const isCreating =
     createStatus !== "idle" && createStatus !== "success" && createStatus !== "error";
 
-  const createStatusLabel: Record<string, string> = {
-    attesting: "Getting attestation...",
-    sending: "Confirm in World App...",
-    confirming: "Confirming transaction...",
-  };
-
   // Auto-select first label when labels load
   useEffect(() => {
     if (labels.length > 0 && !selectedLabel) {
       setSelectedLabel(labels[0]);
     }
   }, [labels, selectedLabel]);
+
+  // Clear pending card + polling once the agent appears in the fetched list
+  useEffect(() => {
+    if (pendingAgent && agents.some((a) => a.agentLabel === pendingAgent.label)) {
+      setPendingAgent(null);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    }
+  }, [agents, pendingAgent]);
+
+  // Clear pending card if creation fails
+  useEffect(() => {
+    if (pendingAgent && createStatus === "error") {
+      setPendingAgent(null);
+    }
+  }, [createStatus, pendingAgent]);
 
   async function handleIdentify() {
     await fetchCreateRpContext();
@@ -334,18 +455,40 @@ function ManageFlow() {
       const ensip25Key =
         erc8004Chain && erc8004AgentId ? buildENSIP25Key(erc8004Chain, erc8004AgentId) : undefined;
 
+      // Show pending card immediately
+      setPendingAgent({ label: agentLabel, address: agentAddress });
+
+      const savedLabel = agentLabel;
+      const savedAddress = agentAddress;
+
+      // Clear form right away
+      setAgentLabel("");
+      setAgentAddress("");
+      setErc8004Chain(null);
+      setErc8004AgentId("");
+
       createAgent({
         parentLabel: submittedLabel,
-        agentLabel,
-        agentAddress: agentAddress as `0x${string}`,
+        agentLabel: savedLabel,
+        agentAddress: savedAddress as `0x${string}`,
         idkitResult: result,
         ensip25Key,
-      }).then(() => {
-        setAgentLabel("");
-        setAgentAddress("");
-        setErc8004Chain(null);
-        setErc8004AgentId("");
-        setRefreshKey((k) => k + 1);
+      }).then((success) => {
+        if (!success) {
+          setPendingAgent(null);
+          createReset();
+          return;
+        }
+        createReset();
+        // Poll refetch until the new agent appears in the list
+        pollRef.current = setInterval(() => {
+          refetch();
+        }, 3000);
+        // Safety: stop polling after 60s
+        setTimeout(() => {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+        }, 60000);
       });
     }
   }
@@ -437,29 +580,41 @@ function ManageFlow() {
               Active Agents
               {!isLoading && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({agents.length})
+                  ({agents.length}{pendingAgent && createStatus !== "error" ? " + 1" : ""})
                 </span>
               )}
             </h2>
 
-            {isLoading ? (
+            {isLoading && !pendingAgent ? (
               <p className="text-sm text-muted-foreground animate-pulse">Loading agents...</p>
-            ) : agents.length === 0 ? (
+            ) : agents.length === 0 && !pendingAgent ? (
               <div className="glass-card rounded-xl px-4 py-4">
                 <p className="text-sm text-muted-foreground text-center">
                   No active agents for {submittedLabel}.humanens.eth
                 </p>
               </div>
             ) : (
-              <div className="space-y-3" key={refreshKey}>
+              <div className="space-y-3">
                 {agents.map((agent) => (
                   <AgentCard
                     key={`${agent.parentLabel}:${agent.agentLabel}`}
                     agent={agent}
-                    onRevoked={() => setRefreshKey((k) => k + 1)}
-                    onRefresh={() => setRefreshKey((k) => k + 1)}
+                    onRevoked={refetch}
                   />
                 ))}
+                {pendingAgent && (
+                  <PendingAgentCard
+                    label={pendingAgent.label}
+                    parentLabel={submittedLabel}
+                    address={pendingAgent.address}
+                    status={createStatus}
+                    error={createError}
+                    onRetry={() => {
+                      createReset();
+                      setPendingAgent(null);
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -498,7 +653,7 @@ function ManageFlow() {
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   />
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-xs text-muted-foreground truncate min-w-0">
                     .{submittedLabel}.humanens.eth
                   </span>
                 </div>
@@ -576,30 +731,7 @@ function ManageFlow() {
                 </div>
               </div>
 
-              {isCreating && (
-                <p className="text-sm text-muted-foreground animate-pulse text-center">
-                  {createStatusLabel[createStatus] ?? "Processing..."}
-                </p>
-              )}
-
-              {createStatus === "success" && (
-                <p className="text-sm text-center" style={{ color: "#6EE7B7" }}>
-                  Agent created successfully!
-                </p>
-              )}
-
-              {createError && <p className="text-sm text-destructive text-center">{createError}</p>}
-
               <div className="flex gap-2">
-                {createError && (
-                  <button
-                    onClick={createReset}
-                    className="flex-1 h-10 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-all hover:scale-[1.005]"
-                    style={{ border: "1px solid rgba(255,255,255,0.06)" }}
-                  >
-                    Reset
-                  </button>
-                )}
                 <button
                   onClick={handleCreate}
                   disabled={!canCreate || isLoadingCreateRp}
