@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
-import { MiniKit } from "@worldcoin/minikit-js";
-import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { ConnectButton } from "@/components/connect-button";
 import { StepIndicator } from "@/components/step-indicator";
 import { useEnsNames } from "@/hooks/use-ens-names";
-import { useSetTextRecord } from "@/hooks/use-set-text-record";
 import { useIdkitVerify } from "@/hooks/use-idkit-verify";
+import { useSetTextRecord } from "@/hooks/use-set-text-record";
 import { cn } from "@/lib/utils";
+import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
+import { MiniKit } from "@worldcoin/minikit-js";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { useAccount } from "wagmi";
 
 export default function LinkPage() {
   const router = useRouter();
@@ -49,46 +50,6 @@ export default function LinkPage() {
   async function handleStartVerify() {
     await fetchRpContext();
     setIdkitOpen(true);
-  }
-
-  if (isSuccess) {
-    return (
-      <main className="mx-auto max-w-lg px-4 py-10">
-        <StepIndicator currentStep={1} />
-        <div
-          className="mt-6 rounded-xl p-6 text-center animate-fade-in-up"
-          style={{
-            border: "1px solid rgba(110,231,183,0.15)",
-            background: "rgba(110,231,183,0.04)",
-            boxShadow: "0 0 32px rgba(110,231,183,0.06), inset 0 1px 0 rgba(110,231,183,0.08)",
-          }}
-        >
-          <div
-            className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full"
-            style={{ background: "rgba(110,231,183,0.1)" }}
-          >
-            <span className="text-lg">&#x2713;</span>
-          </div>
-          <h2 className="text-lg font-semibold" style={{ color: "#6EE7B7" }}>
-            Record Set
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
-          </p>
-          {hash && (
-            <p className="mt-2 break-all text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-              Tx: {hash}
-            </p>
-          )}
-          <div className="mt-6 space-y-1">
-            <p className="font-medium">Continue in World App</p>
-            <p className="text-sm text-muted-foreground">
-              Open the HumanENS Mini App in World App to claim your subname.
-            </p>
-          </div>
-        </div>
-      </main>
-    );
   }
 
   return (
@@ -196,42 +157,128 @@ export default function LinkPage() {
         />
       )}
 
-      {/* Preview */}
-      <div
-        className={cn(
-          "animate-fade-in-up delay-300 rounded-xl p-4",
-          !hasVerified && "pointer-events-none opacity-40",
-        )}
-        style={{
-          border: "1px solid rgba(110,231,183,0.1)",
-          background: "rgba(110,231,183,0.03)",
-          boxShadow: "inset 0 1px 0 rgba(110,231,183,0.05)",
-        }}
-      >
-        <p className="mb-2 text-xs text-muted-foreground">Will set text record</p>
-        <p className="text-[15px]">
-          <code style={{ color: "#3889FF" }}>humanens</code>
-          <span style={{ color: "rgba(255,255,255,0.2)" }}> = </span>
-          <code className="text-xs break-all" style={{ color: "#6EE7B7" }}>
-            {nullifier || "..."}
-          </code>
-        </p>
-      </div>
+      {/* Preview / Success */}
+      {isSuccess ? (
+        <>
+          {/* Success card */}
+          <div className="glass-card animate-fade-in-up rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="animate-subtle-pulse flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: "rgba(110,231,183,0.1)",
+                  boxShadow: "0 0 12px rgba(110,231,183,0.3)",
+                }}
+              >
+                <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: "#6EE7B7" }}>Record Set</p>
+                <p className="text-xs text-muted-foreground">
+                  Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
+                </p>
+              </div>
+            </div>
 
-      {/* CTA */}
-      <button
-        className="w-full rounded-full bg-white text-[#0a0a0a] h-12 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
-        style={{ backgroundColor: "#fafafa", color: "#0a0a0a" }}
-        disabled={!hasVerified || isPending || isConfirming}
-        onClick={() => selectedName && nullifier && setTextRecord(selectedName, nullifier)}
-      >
-        {isPending ? "Confirm in wallet..." : isConfirming ? "Confirming..." : "Set Record"}
-      </button>
+            {hash && (
+              <a
+                href={`https://etherscan.io/tx/${hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-xs truncate transition-colors hover:underline"
+                style={{ color: "rgba(56,137,255,0.7)" }}
+              >
+                View on Etherscan
+              </a>
+            )}
+          </div>
 
-      {(error || idkitError) && (
-        <p className="text-center text-sm text-destructive">
-          {(error as Error)?.message || idkitError}
-        </p>
+          {/* Next step */}
+          <div
+            className="animate-fade-in-up delay-100 rounded-xl p-5 space-y-4"
+            style={{
+              border: "1px solid rgba(56,137,255,0.12)",
+              background: "rgba(56,137,255,0.03)",
+              boxShadow: "inset 0 1px 0 rgba(56,137,255,0.06)",
+            }}
+          >
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Next: Claim your subname</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Scan with World App to claim{" "}
+                <code style={{ color: "#6EE7B7" }}>{selectedName?.replace(".eth", "")}.humanens.eth</code>
+              </p>
+            </div>
+            {(() => {
+              const labelParam = selectedName?.replace(".eth", "") ?? "";
+              const registerPath = encodeURIComponent(`/app/register?label=${labelParam}`);
+              const miniAppUrl = `https://worldcoin.org/mini-app?app_id=${appId}&path=${registerPath}`;
+              return (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="rounded-xl bg-white p-3">
+                    <QRCodeSVG
+                      value={miniAppUrl}
+                      size={160}
+                      level="M"
+                    />
+                  </div>
+                  <a
+                    href={miniAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-10 items-center justify-center rounded-full px-6 text-sm font-medium transition-all hover:scale-[1.02]"
+                    style={{
+                      background: "linear-gradient(135deg, #6EE7B7, #3889FF)",
+                      color: "#09090b",
+                    }}
+                  >
+                    Open World App
+                  </a>
+                </div>
+              );
+            })()}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Preview */}
+          <div
+            className={cn(
+              "animate-fade-in-up delay-300 rounded-xl p-4",
+              !hasVerified && "pointer-events-none opacity-40",
+            )}
+            style={{
+              border: "1px solid rgba(110,231,183,0.1)",
+              background: "rgba(110,231,183,0.03)",
+              boxShadow: "inset 0 1px 0 rgba(110,231,183,0.05)",
+            }}
+          >
+            <p className="mb-2 text-xs text-muted-foreground">Will set text record</p>
+            <p className="text-[15px]">
+              <code style={{ color: "#3889FF" }}>humanens</code>
+              <span style={{ color: "rgba(255,255,255,0.2)" }}> = </span>
+              <code className="text-xs break-all" style={{ color: "#6EE7B7" }}>
+                {nullifier || "..."}
+              </code>
+            </p>
+          </div>
+
+          {/* CTA */}
+          <button
+            className="w-full rounded-full bg-white text-[#0a0a0a] h-12 text-[15px] font-medium shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
+            style={{ backgroundColor: "#fafafa", color: "#0a0a0a" }}
+            disabled={!hasVerified || isPending || isConfirming}
+            onClick={() => selectedName && nullifier && setTextRecord(selectedName, nullifier)}
+          >
+            {isPending ? "Confirm in wallet..." : isConfirming ? "Confirming..." : "Set Record"}
+          </button>
+
+          {(error || idkitError) && (
+            <p className="text-center text-sm text-destructive">
+              {(error as Error)?.message || idkitError}
+            </p>
+          )}
+        </>
       )}
     </main>
   );

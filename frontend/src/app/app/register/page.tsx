@@ -6,10 +6,12 @@ import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
 import { useRegisterLink } from "@/hooks/use-register-link";
 import { useIdkitVerify } from "@/hooks/use-idkit-verify";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function RegisterFlow() {
-  const [label, setLabel] = useState("");
+  const searchParams = useSearchParams();
+  const [label, setLabel] = useState(searchParams.get("label") ?? "");
   const { register, status, error, txHash } = useRegisterLink();
   const {
     rpContext,

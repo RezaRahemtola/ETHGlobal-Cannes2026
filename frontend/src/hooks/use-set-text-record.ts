@@ -1,7 +1,8 @@
 "use client";
 
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
 import { namehash } from "viem";
+import { mainnet } from "wagmi/chains";
 
 const resolverABI = [
   {
@@ -23,11 +24,15 @@ const ENS_PUBLIC_RESOLVER = "0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63";
 export function useSetTextRecord() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { switchChainAsync } = useSwitchChain();
 
-  function setTextRecord(ensName: string, value: string) {
+  async function setTextRecord(ensName: string, value: string) {
     const node = namehash(ensName);
 
+    await switchChainAsync({ chainId: mainnet.id });
+
     writeContract({
+      chainId: mainnet.id,
       address: ENS_PUBLIC_RESOLVER,
       abi: resolverABI,
       functionName: "setText",
