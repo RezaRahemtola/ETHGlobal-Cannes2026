@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import {
-  MiniKit,
-  VerificationLevel,
-  type MiniAppVerifyActionSuccessPayload,
-} from "@worldcoin/minikit-js";
+import { useState, useEffect } from "react";
+import { IDKitRequestWidget, orbLegacy } from "@worldcoin/idkit";
 import { MiniKitGate } from "@/components/minikit-gate";
 import { StepIndicator } from "@/components/step-indicator";
 import { useRegisterLink } from "@/hooks/use-register-link";
-import { WORLD_ACTION_ID } from "@/lib/constants";
+import { useIdkitVerify } from "@/hooks/use-idkit-verify";
 import Link from "next/link";
 
 function RegisterFlow() {
   const [label, setLabel] = useState("");
   const { register, status, error, txHash } = useRegisterLink();
+  const {
+    rpContext,
+    isLoadingRp,
+    fetchRpContext,
+    error: idkitError,
+    appId,
+    action,
+  } = useIdkitVerify();
+
+  const [idkitOpen, setIdkitOpen] = useState(false);
+  const [idkitResult, setIdkitResult] = useState<unknown>(null);
 
   const statusMessages: Record<string, string> = {
     idle: "",
@@ -27,24 +34,16 @@ function RegisterFlow() {
     error: "",
   };
 
-  async function handleVerifyAndRegister() {
-    const { finalPayload } = await MiniKit.commandsAsync.verify({
-      action: WORLD_ACTION_ID,
-      verification_level: VerificationLevel.Orb,
-    });
-
-    if (finalPayload.status !== "success") return;
-
-    const successPayload = finalPayload as MiniAppVerifyActionSuccessPayload;
-    const idkitResult = {
-      nullifier_hash: successPayload.nullifier_hash,
-      proof: successPayload.proof,
-      merkle_root: successPayload.merkle_root,
-      verification_level: successPayload.verification_level,
-    };
-
-    await register({ label, idkitResult });
+  async function handleStartVerify() {
+    await fetchRpContext();
+    setIdkitOpen(true);
   }
+
+  useEffect(() => {
+    if (idkitResult && label) {
+      register({ label, idkitResult });
+    }
+  }, [idkitResult]);
 
   if (status === "success") {
     return (
@@ -166,19 +165,42 @@ function RegisterFlow() {
         </p>
       )}
 
+      {/* IDKit widget */}
+      {rpContext && (
+        <IDKitRequestWidget
+          open={idkitOpen}
+          onOpenChange={setIdkitOpen}
+          app_id={appId as `app_${string}`}
+          action={action}
+          rp_context={rpContext}
+          allow_legacy_proofs={true}
+          preset={orbLegacy()}
+          onSuccess={(result) => {
+            setIdkitResult(result);
+          }}
+          onError={(code) => console.error("IDKit error", code)}
+        />
+      )}
+
       {/* CTA */}
       <button
         className="btn-glow w-full rounded-full h-12 text-[15px] font-medium text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-lg"
         style={{
           background: "linear-gradient(135deg, #6EE7B7 0%, #3889FF 50%, #8B5CF6 100%)",
         }}
-        disabled={!label || status !== "idle"}
-        onClick={handleVerifyAndRegister}
+        disabled={!label || status !== "idle" || isLoadingRp}
+        onClick={handleStartVerify}
       >
-        {status === "idle" ? "Verify & Register" : "Processing..."}
+        {status === "idle"
+          ? isLoadingRp
+            ? "Loading..."
+            : "Verify & Register"
+          : "Processing..."}
       </button>
 
-      {error && <p className="text-center text-sm text-destructive">{error}</p>}
+      {(error || idkitError) && (
+        <p className="text-center text-sm text-destructive">{error || idkitError}</p>
+      )}
     </main>
   );
 }

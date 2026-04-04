@@ -24,12 +24,7 @@ export function useRegisterLink() {
 
   async function register(args: {
     label: string;
-    idkitResult: {
-      nullifier_hash: string;
-      proof: string;
-      merkle_root: string;
-      verification_level: string;
-    };
+    idkitResult: unknown;
   }) {
     setStatus("attesting");
     setError(null);

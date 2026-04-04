@@ -189,10 +189,9 @@ export default function LinkPage() {
           rp_context={rpContext}
           allow_legacy_proofs={true}
           preset={orbLegacy()}
-          handleVerify={async (result) => {
+          onSuccess={async (result) => {
             await verifyNullifier(result);
           }}
-          onSuccess={() => {}}
           onError={(code) => console.error("IDKit error", code)}
         />
       )}
