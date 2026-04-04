@@ -54,15 +54,34 @@ export function useAgents(parentLabel: string) {
           toBlock: "latest",
         });
 
-        const revokedSet = new Set(
-          revokedLogs.map((l) => `${l.args.parentLabel}:${l.args.agentLabel}`),
-        );
+        // Track latest block per agent key for revocations (handles create→revoke→re-create)
+        const lastRevokeBlock = new Map<string, bigint>();
+        for (const l of revokedLogs) {
+          if (l.args.parentLabel !== parentLabel) continue;
+          const key = `${l.args.parentLabel}:${l.args.agentLabel}`;
+          const prev = lastRevokeBlock.get(key);
+          if (!prev || l.blockNumber > prev) {
+            lastRevokeBlock.set(key, l.blockNumber);
+          }
+        }
 
-        const activeAgentLogs = createdLogs.filter(
-          (l) =>
-            l.args.parentLabel === parentLabel &&
-            !revokedSet.has(`${l.args.parentLabel}:${l.args.agentLabel}`),
-        );
+        // An agent is active if its latest create came after its latest revoke
+        const latestCreate = new Map<string, (typeof createdLogs)[number]>();
+        for (const l of createdLogs) {
+          if (l.args.parentLabel !== parentLabel) continue;
+          const key = `${l.args.parentLabel}:${l.args.agentLabel}`;
+          const prev = latestCreate.get(key);
+          if (!prev || l.blockNumber > prev.blockNumber) {
+            latestCreate.set(key, l);
+          }
+        }
+
+        const activeAgentLogs = [...latestCreate.entries()]
+          .filter(([key, l]) => {
+            const revokedAt = lastRevokeBlock.get(key);
+            return !revokedAt || l.blockNumber > revokedAt;
+          })
+          .map(([, l]) => l);
 
         const agentsWithStatus = await Promise.all(
           activeAgentLogs.map(async (l) => {

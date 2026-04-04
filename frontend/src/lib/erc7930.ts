@@ -20,6 +20,9 @@ export const ERC8004_CHAINS = [
   { id: 100, name: "Gnosis" },
   { id: 42220, name: "Celo" },
   { id: 5000, name: "Mantle" },
+  { id: 167000, name: "Taiko" },
+  { id: 1868, name: "Soneium" },
+  { id: 2741, name: "Abstract" },
 ] as const;
 
 /**
@@ -29,7 +32,7 @@ function encodeULEB128(value: number): Uint8Array {
   const bytes: number[] = [];
   do {
     let byte = value & 0x7f;
-    value >>= 7;
+    value >>>= 7;
     if (value !== 0) byte |= 0x80;
     bytes.push(byte);
   } while (value !== 0);

@@ -80,13 +80,6 @@ export const humanENSLinkerABI = [
   },
   {
     type: "function",
-    name: "subnameExists",
-    inputs: [{ name: "", type: "bytes32" }],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
     name: "nullifierToSourceNode",
     inputs: [{ name: "", type: "bytes32" }],
     outputs: [{ name: "", type: "bytes32" }],
