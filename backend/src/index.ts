@@ -44,17 +44,16 @@ async function verifyWorldId(idkitResult: unknown): Promise<{ nullifierHash: str
 
 async function signAttestation(
   action: string,
-  registrant: Hex,
   nullifierHash: Hex,
   sourceNode: Hex,
   label: string,
   timestamp: bigint,
 ): Promise<Hex> {
-  // Must match contract: keccak256(abi.encodePacked(action, registrant, nullifierHash, sourceNode, label, timestamp))
+  // Must match contract: keccak256(abi.encodePacked(action, nullifierHash, sourceNode, label, timestamp))
   const hash = keccak256(
     encodePacked(
-      ["string", "address", "bytes32", "bytes32", "string", "uint256"],
-      [action, registrant, nullifierHash, sourceNode, label, timestamp],
+      ["string", "bytes32", "bytes32", "string", "uint256"],
+      [action, nullifierHash, sourceNode, label, timestamp],
     ),
   );
   return account.signMessage({ message: { raw: hash } });
@@ -119,7 +118,6 @@ app.post("/api/verify-nullifier", async (req, res) => {
  *
  * Body: {
  *   idkitResult: <raw IDKit result payload>,
- *   registrant: "0x...",      // user's wallet address
  *   sourceNode: "0x...",      // namehash of alice.eth
  *   label: "alice"            // desired subname label
  * }
@@ -131,10 +129,10 @@ app.post("/api/verify-nullifier", async (req, res) => {
  */
 app.post("/api/verify-and-attest", async (req, res) => {
   try {
-    const { idkitResult, registrant, sourceNode, label } = req.body;
+    const { idkitResult, sourceNode, label } = req.body;
 
-    if (!idkitResult || !registrant || !sourceNode || !label) {
-      const missing = [!idkitResult && "idkitResult", !registrant && "registrant", !sourceNode && "sourceNode", !label && "label"].filter(Boolean);
+    if (!idkitResult || !sourceNode || !label) {
+      const missing = [!idkitResult && "idkitResult", !sourceNode && "sourceNode", !label && "label"].filter(Boolean);
       console.error("verify-and-attest missing fields:", missing.join(", "));
       return res
         .status(400)
@@ -149,7 +147,6 @@ app.post("/api/verify-and-attest", async (req, res) => {
     const timestamp = BigInt(Math.floor(Date.now() / 1000));
     const signature = await signAttestation(
       "register",
-      registrant as Hex,
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
@@ -178,13 +175,13 @@ app.post("/api/verify-and-attest", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-revoke
- * Body: { idkitResult, registrant, nullifierHash, sourceNode, label }
- * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, sourceNode, label, timestamp))
+ * Body: { idkitResult, sourceNode, label }
+ * Hash: keccak256(abi.encodePacked("revoke", nullifierHash, sourceNode, label, timestamp))
  */
 app.post("/api/verify-and-sign-revoke", async (req, res) => {
   try {
-    const { idkitResult, registrant, sourceNode, label } = req.body;
-    if (!idkitResult || !registrant || !sourceNode || !label) {
+    const { idkitResult, sourceNode, label } = req.body;
+    if (!idkitResult || !sourceNode || !label) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -193,7 +190,6 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
 
     const signature = await signAttestation(
       "revoke",
-      registrant as Hex,
       nullifierHash as Hex,
       sourceNode as Hex,
       label,
@@ -210,13 +206,13 @@ app.post("/api/verify-and-sign-revoke", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-agent
- * Body: { idkitResult, registrant, parentLabel, agentLabel, agentAddress }
- * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, parentLabel, agentLabel, agentAddress, timestamp))
+ * Body: { idkitResult, parentLabel, agentLabel, agentAddress }
+ * Hash: keccak256(abi.encodePacked("createAgent", nullifierHash, parentLabel, agentLabel, agentAddress, timestamp))
  */
 app.post("/api/verify-and-sign-agent", async (req, res) => {
   try {
-    const { idkitResult, registrant, parentLabel, agentLabel, agentAddress } = req.body;
-    if (!idkitResult || !registrant || !parentLabel || !agentLabel || !agentAddress) {
+    const { idkitResult, parentLabel, agentLabel, agentAddress } = req.body;
+    if (!idkitResult || !parentLabel || !agentLabel || !agentAddress) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -225,10 +221,9 @@ app.post("/api/verify-and-sign-agent", async (req, res) => {
 
     const hash = keccak256(
       encodePacked(
-        ["string", "address", "bytes32", "string", "string", "address", "uint256"],
+        ["string", "bytes32", "string", "string", "address", "uint256"],
         [
           "createAgent",
-          registrant as Hex,
           nullifierHash as Hex,
           parentLabel,
           agentLabel,
@@ -249,13 +244,13 @@ app.post("/api/verify-and-sign-agent", async (req, res) => {
 
 /**
  * POST /api/verify-and-sign-revoke-agent
- * Body: { idkitResult, registrant, parentLabel, agentLabel }
- * Hash: keccak256(abi.encodePacked(registrant, nullifierHash, parentLabel, agentLabel, timestamp))
+ * Body: { idkitResult, parentLabel, agentLabel }
+ * Hash: keccak256(abi.encodePacked("revokeAgent", nullifierHash, parentLabel, agentLabel, timestamp))
  */
 app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
   try {
-    const { idkitResult, registrant, parentLabel, agentLabel } = req.body;
-    if (!idkitResult || !registrant || !parentLabel || !agentLabel) {
+    const { idkitResult, parentLabel, agentLabel } = req.body;
+    if (!idkitResult || !parentLabel || !agentLabel) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
@@ -264,10 +259,9 @@ app.post("/api/verify-and-sign-revoke-agent", async (req, res) => {
 
     const hash = keccak256(
       encodePacked(
-        ["string", "address", "bytes32", "string", "string", "uint256"],
+        ["string", "bytes32", "string", "string", "uint256"],
         [
           "revokeAgent",
-          registrant as Hex,
           nullifierHash as Hex,
           parentLabel,
           agentLabel,
