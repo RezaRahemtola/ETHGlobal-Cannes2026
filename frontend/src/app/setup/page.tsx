@@ -47,6 +47,7 @@ export default function LinkPage() {
   const [idkitOpen, setIdkitOpen] = useState(false);
   const [existingRecord, setExistingRecord] = useState<string | null>(null);
   const [checkingRecord, setCheckingRecord] = useState(false);
+  const [skippedToClaim, setSkippedToClaim] = useState(false);
 
   useEffect(() => {
     if (!selectedName) {
@@ -130,8 +131,14 @@ export default function LinkPage() {
               color: "rgba(251,191,36,0.85)",
             }}
           >
-            <strong>{selectedName}</strong> already has a <code>humanens</code> record. Setting a
-            new one will overwrite it.
+            <strong>{selectedName}</strong> already has a <code>humanens</code> record.{" "}
+            <button
+              onClick={() => setSkippedToClaim(true)}
+              className="underline font-medium hover:opacity-80 transition-opacity"
+            >
+              Skip to claim
+            </button>{" "}
+            or set a new one below to overwrite it.
           </div>
         )}
       </div>
@@ -141,6 +148,7 @@ export default function LinkPage() {
         className={cn(
           "glass-card animate-fade-in-up delay-300 rounded-xl p-4",
           !selectedName && "pointer-events-none opacity-40",
+          skippedToClaim && "hidden",
         )}
       >
         <p className="mb-2 text-xs text-muted-foreground">World ID Verification</p>
@@ -186,66 +194,68 @@ export default function LinkPage() {
       )}
 
       {/* Record status card — show during confirming and after success */}
-      {isConfirming || isSuccess ? (
+      {isConfirming || isSuccess || skippedToClaim ? (
         <>
-          <div className="glass-card animate-fade-in-up rounded-xl p-5 space-y-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                  isConfirming && "animate-pulse",
-                  isSuccess && "animate-subtle-pulse",
-                )}
-                style={{
-                  backgroundColor: isSuccess ? "rgba(110,231,183,0.1)" : "rgba(56,137,255,0.1)",
-                  boxShadow: isSuccess
-                    ? "0 0 12px rgba(110,231,183,0.3)"
-                    : "0 0 12px rgba(56,137,255,0.3)",
-                }}
-              >
-                {isSuccess ? (
-                  <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
-                ) : (
-                  <span
-                    className="block h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
-                    style={{ borderColor: "#3889FF", borderTopColor: "transparent" }}
-                  />
-                )}
-              </div>
-              <div>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: isSuccess ? "#6EE7B7" : "#3889FF" }}
-                >
-                  {isSuccess ? "Record Set" : "Confirming..."}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isSuccess ? (
-                    <>
-                      Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
-                    </>
-                  ) : (
-                    "Waiting for transaction confirmation"
+          {!skippedToClaim && (
+            <div className="glass-card animate-fade-in-up rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                    isConfirming && "animate-pulse",
+                    isSuccess && "animate-subtle-pulse",
                   )}
-                </p>
+                  style={{
+                    backgroundColor: isSuccess ? "rgba(110,231,183,0.1)" : "rgba(56,137,255,0.1)",
+                    boxShadow: isSuccess
+                      ? "0 0 12px rgba(110,231,183,0.3)"
+                      : "0 0 12px rgba(56,137,255,0.3)",
+                  }}
+                >
+                  {isSuccess ? (
+                    <span style={{ color: "#6EE7B7" }}>&#x2713;</span>
+                  ) : (
+                    <span
+                      className="block h-4 w-4 rounded-full border-2 border-t-transparent animate-spin"
+                      style={{ borderColor: "#3889FF", borderTopColor: "transparent" }}
+                    />
+                  )}
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: isSuccess ? "#6EE7B7" : "#3889FF" }}
+                  >
+                    {isSuccess ? "Record Set" : "Confirming..."}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isSuccess ? (
+                      <>
+                        Nullifier bound to <code style={{ color: "#6EE7B7" }}>{selectedName}</code>
+                      </>
+                    ) : (
+                      "Waiting for transaction confirmation"
+                    )}
+                  </p>
+                </div>
               </div>
+
+              {hash && (
+                <a
+                  href={`https://etherscan.io/tx/${hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs truncate transition-colors hover:underline"
+                  style={{ color: "rgba(56,137,255,0.7)" }}
+                >
+                  View on Etherscan
+                </a>
+              )}
             </div>
+          )}
 
-            {hash && (
-              <a
-                href={`https://etherscan.io/tx/${hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-xs truncate transition-colors hover:underline"
-                style={{ color: "rgba(56,137,255,0.7)" }}
-              >
-                View on Etherscan
-              </a>
-            )}
-          </div>
-
-          {/* Next step — only after confirmed */}
-          {isSuccess && (
+          {/* Next step — after confirmed or skipped */}
+          {(isSuccess || skippedToClaim) && (
             <div
               className="animate-fade-in-up delay-100 rounded-xl p-5 space-y-4"
               style={{
