@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
 import { IrisLogo } from "@/components/iris-logo";
 import { cn } from "@/lib/utils";
+import { useMiniKit } from "@worldcoin/minikit-js/minikit-provider";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const browserLinks = [
   { href: "/", label: "Home" },
@@ -38,7 +38,7 @@ export function Nav() {
           href={logoHref}
           className="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <IrisLogo size={22} />
+          <IrisLogo size={32} />
           <span className="text-[17px] font-semibold tracking-tight">HumanENS</span>
         </Link>
         <div className="flex gap-6 text-[13px]">
