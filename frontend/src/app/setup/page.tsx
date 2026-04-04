@@ -265,7 +265,7 @@ export default function LinkPage() {
               </div>
               {(() => {
                 const labelParam = selectedName?.replace(".eth", "") ?? "";
-                const registerPath = encodeURIComponent(`/app/claim?label=${labelParam}`);
+                const registerPath = encodeURIComponent(`/app/claim/?label=${labelParam}`);
                 const miniAppUrl = `https://worldcoin.org/mini-app?app_id=${appId}&path=${registerPath}`;
                 return (
                   <div className="flex flex-col items-center gap-3">
