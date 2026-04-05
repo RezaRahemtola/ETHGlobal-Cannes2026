@@ -77,10 +77,12 @@ register-agent/     CLI — ERC-8004 agent registration test script
 
 ## Live Services
 
-| Service               | URL                               |
-| --------------------- | --------------------------------- |
-| World ID Backend      | https://humanens-backend.reza.dev |
-| ENS Ownership Gateway | https://humanens-gateway.reza.dev |
+| Service                 | URL                                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| World ID Backend        | https://humanens-backend.reza.dev                                                                                      |
+| ENS Ownership Gateway   | https://humanens-gateway.reza.dev                                                                                      |
+| L2Registry contract     | [0x37119ac61eb66d2b877e8c3fa65924a3b6c6970b](https://worldscan.org/address/0x37119ac61eb66d2b877e8c3fa65924a3b6c6970b) |
+| HumanENSLinker contract | [0xE073cc7E0675a65BD9b03D528c1c227614119063](https://worldscan.org/address/0xE073cc7E0675a65BD9b03D528c1c227614119063) |
 
 <div align="center">
   <h2>Made with ❤️ by</h2>
