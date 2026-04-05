@@ -140,39 +140,6 @@ async function main() {
   }
   console.log(`  agentId: ${agentId}`);
 
-  // Update tokenURI with real agentId + registrations
-  console.log("\nUpdating agent URI with agentId...");
-  const finalFile = {
-    type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-    name: agentName,
-    description: agentDescription,
-    image: "",
-    services: [
-      { name: "ENS", endpoint: ensName },
-    ],
-    x402Support: false,
-    active: true,
-    registrations: [
-      { agentId, agentRegistry: `eip155:${chain.id}:${ERC8004_REGISTRY}` },
-    ],
-    supportedTrust: [],
-  };
-
-  const finalB64 = Buffer.from(JSON.stringify(finalFile)).toString("base64");
-  const finalUri = `data:application/json;base64,${finalB64}`;
-
-  const setUriAbi = parseAbi(["function setAgentURI(uint256 agentId, string newURI) external"]);
-  const setTx = await walletClient.writeContract({
-    address: ERC8004_REGISTRY,
-    abi: setUriAbi,
-    functionName: "setAgentURI",
-    args: [BigInt(agentId), finalUri],
-  });
-  console.log(`  tx: ${setTx}`);
-
-  const setReceipt = await publicClient.waitForTransactionReceipt({ hash: setTx });
-  console.log(`  confirmed in block ${setReceipt.blockNumber}`);
-
   console.log(`\nDone! Agent #${agentId} registered on ${chain.name} with ENS ${ensName}`);
 }
 
